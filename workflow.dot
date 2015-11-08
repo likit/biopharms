@@ -1,0 +1,25 @@
+digraph G {
+    scopusdb [label="Scopus", shape=ellipse, style="bold"];
+    pubmed [label="Pubmed", shape=ellipse, style="bold"];
+    pubinfo [label="{<f0>Publication | Patent | Product | ...}",
+                shape="Mrecord", style="filled,bold"];
+    authorinfo [label="{<f0>Name | Affiliation | ID | ...}",
+                shape="Mrecord", style="filled,bold"];
+    networkdb [label="Neo4j Network DB", style="filled,bold"];
+    webinterface [label="Web\nInterface", style="bold"];
+    webapp [label="Web\nApp", style="bold"];
+    user [label="User", style="bold"];
+    othersrc [label="Other\nsources", style="bold"];
+    dataentry [label="dataentry.py", shape="box", style="bold,filled"]
+
+    scopusdb -> pubinfo [label=" scopus.py"];
+    pubmed -> pubinfo [label=" pubmed.py"];
+    pubinfo -> authorinfo:f0 [label=" authsearch.py"];
+    pubinfo -> dataentry;
+    webinterface -> pubinfo [label=" Manual\nEntry"];
+    webinterface -> authorinfo:f0 [label=" Manual\nEntry"];
+    authorinfo -> dataentry -> networkdb;
+    othersrc -> pubinfo [label=" xxx.py"];
+    webapp -> networkdb;
+    user -> webapp [label=" Query"];
+}
