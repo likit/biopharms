@@ -157,11 +157,34 @@ class SocialNetwork(object):
 
 def add_pubmed(pub_data, authors):
     # Create publication
-    print("Creating publication")
+    print("\tCreating publication node")
     labels = ['PUBMED', 'ARTICLE']
     node = Node.cast(labels, pub_data)
-    result_node, = graph.create(node)
-    print("Node - ", result_node)
+    pub_node, = graph.create(node)
+    # print("Node - ", pub_node)
+
+    # Create authors
+    print('\tSearching/creating author nodes..')
+    labels = ['AUTHOR']
+    for author in authors:
+        print('\t\tSearching for %s, %s' % \
+                (author['LastName'], author['ForeName']))
+        cypher_command = \
+            "MATCH (n:AUTHOR {LastName: '%s', ForeName: '%s'}) return n;" \
+            % (author['LastName'], author['ForeName'])
+        found_authors = graph.cypher.execute(cypher_command)
+        if len(found_authors) == 0:
+            print('\t\tNot found.')
+            node = Node.cast(labels, author)
+            auth_node, = graph.create(node)
+            r = Relationship(auth_node, 'COAUTHOR', pub_node, ambiguous=False)
+            coauthor_path = graph.create(r)
+        elif len(found_authors) >= 1:
+            print('\t\tFound %d persons.' % len(found_authors))
+            for auth in found_authors:
+                r = Relationship(auth.n, 'COAUTHOR', pub_node, ambiguous=True)
+                auth.n.properties['Affiliation'] += author['Affiliation']
+                coauthor_path = graph.create(r)
 
 
 if __name__=='__main__':
