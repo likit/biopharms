@@ -20,21 +20,23 @@ handle = Entrez.esearch(db="pubmed", term=search_term)
 record = Entrez.read(handle)
 
 n=0
+print(record['IdList'])
 for article_id in record['IdList']:
+    print('Fetching article number %d ID=%s...' % (n+1, article_id))
     pub_data = {}
     authors = []
     handle = Entrez.efetch(db='pubmed', id=article_id,
                 rettype="medline", retmode='xml')
     records = Entrez.read(handle)
 
-    print('Getting article Ids...')
+    print('\tGetting article Ids...')
     # Get article IDs
     for id in records[0]['PubmedData']['ArticleIdList']:
         if 'IdType' in id.attributes:
             id_type = id.attributes['IdType']
             pub_data[id_type] = str(id)
 
-    print('Getting article Info...')
+    print('\tGetting article Info...')
     # Get some article info
     article_date = records[0]['MedlineCitation']\
                                 ['Article'].get('ArticleDate', '')
@@ -63,7 +65,7 @@ for article_id in record['IdList']:
                                 ['MedlineJournalInfo'].get('Country', ''))
 
     # Get authors
-    print('Getting authors Info...')
+    print('\tGetting authors Info...')
     for author in records[0]['MedlineCitation']['Article']['AuthorList']:
         author_data = {}
         author_data['LastName'] = author.get('LastName', '')
@@ -86,12 +88,11 @@ for article_id in record['IdList']:
             for kw in kwlist:
                 keywords.append(kw)
         pub_data['Keywords'] = ','.join(keywords)
-        break
 
-    if n ==5 : break
+    dataentry.add_pubmed(pub_data, authors)
+    if n == 10 : break
     n += 1
 
-print(pub_data['Keywords'])
-print(pub_data['BiopharmCategory'])
+# print(pub_data['Keywords'])
+# print(pub_data['BiopharmCategory'])
 # Add data to the database
-# dataentry.add_pubmed(pub_data, authors)
