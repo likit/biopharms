@@ -1,26 +1,31 @@
 from Bio import Entrez
 from datetime import datetime
 import dataentry
+import sys
 
 EMAIL = 'preeyano@msu.edu'
 Entrez.email = EMAIL
 
-category = 'vaccine'
-query = "vaccine"
-year = 2015
+query = sys.argv[1]
+year = int(sys.argv[2])
+category = sys.argv[3]
 search_term = "%s AND Thailand[AFFL] %d[PDAT]" % (query, year)
+print(search_term)
 
 handle = Entrez.egquery(term=search_term)
 record = Entrez.read(handle)
 for row in record['eGQueryResult']:
     if row['DbName'] == 'pubmed':
-        print(row['DbName'], row['Count'])
+        retmax = row['Count']
+        break
 
-handle = Entrez.esearch(db="pubmed", term=search_term)
+handle = Entrez.esearch(db="pubmed", term=search_term, retmax=retmax)
 record = Entrez.read(handle)
 
 n=0
+print(retmax)
 print(record['IdList'])
+print(len(record['IdList']))
 for article_id in record['IdList']:
     print('Fetching article number %d ID=%s...' % (n+1, article_id))
     pub_data = {}
@@ -90,7 +95,6 @@ for article_id in record['IdList']:
         pub_data['Keywords'] = ','.join(keywords)
 
     dataentry.add_pubmed(pub_data, authors)
-    if n == 10 : break
     n += 1
 
 # print(pub_data['Keywords'])

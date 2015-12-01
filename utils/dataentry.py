@@ -170,7 +170,7 @@ def add_pubmed(pub_data, authors):
         print('\t\tSearching for %s, %s' % \
                 (author['LastName'], author['ForeName']))
         cypher_command = \
-            "MATCH (n:AUTHOR {LastName: '%s', ForeName: '%s'}) return n;" \
+            'MATCH (n:AUTHOR {LastName: "%s", ForeName: "%s"}) return n;' \
             % (author['LastName'], author['ForeName'])
         found_authors = graph.cypher.execute(cypher_command)
         if len(found_authors) == 0:

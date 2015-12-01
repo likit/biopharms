@@ -20,14 +20,23 @@ def main_page():
     select_labels = set()
     for lab in labels:
         for l in lab[0]: select_labels.add(l)
+    category = request.args.get('category', 'all')  # category
     return render_template('main.html',
-            alllabels=ALLLABELS, select_labels=list(select_labels))
+            alllabels=ALLLABELS, select_labels=list(select_labels),
+            all_categories=['vaccine', 'stem cell'],
+            category=category)
 
 
 @main.route('/_get_people_list')
 def get_people_list():
-    cypher_command = \
-            "MATCH (n:AUTHOR) return n;"
+    # category = 'all'
+    print('Category', request.args.get('category'))
+    category = request.args.get('category', 'all')
+    if category == "all":
+        cypher_command = "MATCH (n:AUTHOR) return n;"
+    else:
+        cypher_command = \
+            'MATCH (n:AUTHOR)-[COAUTHOR]->(g:ARTICLE {BiopharmCategory: "%s"}) return n;' % category
     people = graph.cypher.execute(cypher_command)
     alist = []
     for p in people:
@@ -38,7 +47,8 @@ def get_people_list():
             affl = p.n.properties['Affiliation'][0]
         except:
             affl = 'Not Available'
-        alist.append([firstname, lastname, initials, affl, 0])
+        if firstname.strip() and lastname.strip():
+            alist.append([firstname, lastname, initials, affl, 0])
 
     return jsonify(data=alist)
 
@@ -172,12 +182,17 @@ def pub_summary():
             "MATCH (n:ARTICLE) return n;"
     pubs = graph.cypher.execute(cypher_command)
 
+    # TODO: A list of categories should be stored somewhere
+    all_categories = set()  # store all categories from the database
+
     for p in pubs:
         if ctg == 'all':
             get_data(p, category_data, keyword_data, kw)
         else:
             if p.n.properties['BiopharmCategory'] == ctg:
                 get_data(p, category_data, keyword_data, kw)
+
+        all_categories.add(p.n.properties['BiopharmCategory'])
 
     keyword_year_sum = []
     for k,v in sorted(kw.iteritems(), key=lambda (k,v): v, reverse=True)[:10]:
@@ -202,4 +217,5 @@ def pub_summary():
             keyword_year_sum=keyword_year_sum,
             category=ctg,
             category_data=category_data,
+            all_categories=sorted(all_categories),
             )
