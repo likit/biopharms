@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block styles %}
+{{ super() }}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css"
+    href="{{ url_for('static', filename='DataTables-1.10.10/media/css/jquery.dataTables.css') }}">
+<link rel="stylesheet" type="text/css"
+    href="{{ url_for('static', filename='nvd3/build/nv.d3.min.css') }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- jQuery -->
+<script type="text/javascript" charset="utf8"
+    src="{{ url_for('static', filename='DataTables-1.10.10/media/js/jquery.js')}}"></script>
+<!-- D3 -->
+<script type="text/javascript" charset="utf8"
+    src="{{ url_for('static', filename='d3.min.js')}}"></script>
+<!-- DataTables -->
+<script type="text/javascript" charset="utf8"
+    src="{{ url_for('static', filename='DataTables-1.10.10/media/js/jquery.dataTables.js') }}"></script>
+<!-- nvd3 -->
+<script type="text/javascript" charset="utf8"
+    src="{{ url_for('static', filename='nvd3/build/nv.d3.min.js')}}"></script>
+
+<script>$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};</script>
+
+<script>
+    $(document).ready( function () {
+        var mygrid = $('#coauthgrid').DataTable({
+            "processing": true,
+            "ajax": $SCRIPT_ROOT + "/_get_coauthor_list?fullname="+{{ fullname|tojson|safe }},
+            "columnDefs": [
+                { "targets": [4],
+                    "data": null,
+                    "defaultContent": '<a href=# class=action-view><span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span></a>'
+                }]
+        });
+        $('#coauthgrid').on('click', '.action-view', function() {
+            var firstname = mygrid.row($(this).parents('tr').first()).data()[0];
+            var lastname = mygrid.row($(this).parents('tr').first()).data()[1];
+            var fullname = firstname + '|' + lastname;
+            window.location.href="{{ url_for('main.view_person', fullname='') }}" + fullname;
+        });
+    });
+</script>
+<script>
+    $(document).ready( function () {
+        var mygrid = $('#pubgrid').DataTable({
+            "processing": true,
+            "ajax": $SCRIPT_ROOT + "/_get_pub_list?fullname="+{{ fullname|tojson|safe }},
+        });
+    });
+</script>
+<script>
+    {# var sel_labels = {{ select_labels|tojson|safe }}; #}
+    {# for (var lab in sel_labels.sort()) { #}
+    {#     $('#' + sel_labels[lab]).prop('checked', true); #}
+    {#     $('#tags').append( #}
+    {#         "<span class='label label-default'>"+sel_labels[lab]+"</span> ") #}
+    {# } #}
+</script>
+<script>
+var pubyears = {{ pubyear_data|tojson|safe }};
+nv.addGraph(function() {
+    var chart = nv.models.lineChart()
+                    .margin({left: 100})
+                    .x(function(d) { return d.key; })
+                    .y(function(d) { return d.y; })
+                    .useInteractiveGuideline(true)
+                    .showLegend(true)
+                    .showYAxis(true)
+                    .showXAxis(true);
+    chart.xAxis.axisLabel('Year');
+    chart.yAxis.axisLabel('Number');
+    d3.select('#pubyear_chart svg')
+        .datum(pubyears)
+        .call(chart);
+
+    nv.utils.windowResize(function() { chart.update() });
+    return chart;
+});
+</script>
+{% endblock %}
+
+{% block title %}Main{% endblock %}
+{% block page_content %}
+<div class="page-header">
+    <div>
+        <p><h1>Researcher Information</h1><div id="tags"></div></p>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <h2>{{ firstname }} {{ lastname}} <small><span class="badge">{{ initials }}</span></small>
+                {% for lab in labels %}
+                    <span class="label label-default">{{ lab }}</span>
+                {% endfor %}
+                {% for cat in categories %}
+                    <span class="label label-success">{{ cat }}</span>
+                {% endfor %}
+            </h2>
+            <h2><small>{{ affl }}</small></h2>
+            {% for kw in keywords %}
+            <h4><span class="label label-primary">{{ kw }}</span></h4>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading"><h3>Coauthors</h3></div>
+        <div class="panel-body">
+            <table id="coauthgrid" class="display">
+                <thead>
+                    <tr>
+                        <th>First name</th>
+                        <th>Last name</th>
+                        <th>Initials</th>
+                        <th>Affiliation</th>
+                        <th>More..</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading"><h3>Publications</h3></div>
+        <div class="panel-body">
+            <table id="pubgrid" class="display">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Abstract</th>
+                        <th>PubDate</th>
+                        <th>Keywords</th>
+                        <th>Group</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div id='pubyear_chart'><svg></svg></div>
+</div>
+{% endblock %}

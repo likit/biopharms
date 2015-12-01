@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block styles %}
+{{ super() }}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css"
+    href="{{ url_for('static', filename='DataTables-1.10.10/media/css/jquery.dataTables.css') }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- jQuery -->
+<script type="text/javascript" charset="utf8"
+src="{{ url_for('static', filename='DataTables-1.10.10/media/js/jquery.js')}}"></script>
+<!-- DataTables -->
+<script type="text/javascript" charset="utf8"
+src="{{ url_for('static', filename='DataTables-1.10.10/media/js/jquery.dataTables.js') }}"></script>
+<script>$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};</script>
+
+<script>
+    $(document).ready( function () {
+        var mygrid = $('#datagrid').DataTable({
+            "processing": true,
+            "ajax": {
+                "url": $SCRIPT_ROOT + "/_get_people_list",
+                "data": { 'category': {{ category|tojson|safe }} }
+            },
+            "columnDefs": [
+                { "targets": [4],
+                    "data": null,
+                    "defaultContent": '<a href=# class=action-view><span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span></a>'
+                }]
+        });
+        $('#datagrid').on('click', '.action-view', function() {
+            var firstname = mygrid.row($(this).parents('tr').first()).data()[0];
+            var lastname = mygrid.row($(this).parents('tr').first()).data()[1];
+            var fullname = firstname + '|' + lastname;
+            window.location.href="{{ url_for('main.view_person', fullname='') }}" + fullname;
+        });
+    });
+</script>
+<script>
+    var sel_labels = {{ select_labels|tojson|safe }};
+    for (var lab in sel_labels.sort()) {
+        $('#' + sel_labels[lab]).prop('checked', true);
+        $('#tags').append(
+            "<span class='label label-success'>"+sel_labels[lab]+"</span> ")
+    }
+</script>
+{% endblock %}
+
+{% block title %}Main{% endblock %}
+{% block page_content %}
+<div class="page-header">
+    <div>
+        <p><h1>Researcher Table</h1>
+        <div id="tags"></div></p>
+    </div>
+    <div class="well well-sm">
+        {% for lab in alllabels %}
+            <input type="checkbox" name="{{ lab }}"
+                   id="{{ lab }}" value="{{ lab }}"> {{ lab }}
+        {% endfor %}
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                {{ category.title() }}
+                <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
+                Category  <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="{{ url_for('main.main_page', category="all") }}">All</a></li>
+                {% for ctg in  all_categories %}
+                    <li><a href="{{ url_for('main.main_page', category=ctg) }}">{{ ctg.title() }}</a></li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+    <div>
+        <table id="datagrid" class="display">
+            <thead>
+                <tr>
+                    <th>First name</th>
+                    <th>Last name</th>
+                    <th>Initials</th>
+                    <th>Affiliation</th>
+                    <th>More..</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+</div>
+{% endblock %}
