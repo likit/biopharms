@@ -118,7 +118,7 @@ nv.addGraph(function() {
                 {% for a in affiliations %}
                 <p>
                     {% for f in a %}
-                        <a href="#">{{ f[1] }}</a>
+                    <a href="{{ url_for("main.show_affil", labels=f[0], name=f[1]) }}">{{ f[1] }}</a>
                     {% endfor %}
                 </p>
                 {% endfor %}
