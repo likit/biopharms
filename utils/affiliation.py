@@ -22,7 +22,7 @@ class LocationChunker(ChunkParserI):
         i = 0
         l = len(tagged_sent)
         inside = False
-        print('iob_locations was called.')
+        # print('iob_locations was called.')
 
         while i < l:
             word, tag = tagged_sent[i]
@@ -117,7 +117,7 @@ def add_affil(auth, graph, article_date):
                                 loc_name = \
                                 ' '.join([x[0] for x in subtree.leaves()])
                                 node = graph.merge_one('LOCATION',
-                                        'name', aff_name)
+                                        'name', loc_name)
                                 node.labels.add('AFFILIATION')
                                 node.push()
                                 # print(node)
