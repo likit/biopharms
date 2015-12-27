@@ -81,6 +81,24 @@ def view_person():
             "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'}) return n;" \
             % (firstname, lastname)
     author = graph.cypher.execute(cypher_command)
+
+    cypher_command = \
+            "start n = node(*) match p=(n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:IN]->(m) return n,m ORDER BY r.year DESC LIMIT 5;" % (firstname, lastname)
+    curr_affil = graph.cypher.execute(cypher_command)
+    all_affils = []
+    for c in curr_affil:
+        command = 'start n = node(*) match p=(n:%s {name:"%s"})-[r:IN*..]->(m) return n,m' \
+                        % (':'.join(c.m.labels), c.m.properties['name'])
+        results = graph.cypher.execute(command)
+        affil = set()
+        for a in results:
+            affil.add(('::'.join(a.m.labels), a.m.properties['name']))
+        affil.add(('::'.join(a.n.labels), a.n.properties['name']))
+        all_affils.append(affil)
+
+    for a in all_affils:
+        print(a)
+
     cypher_command = \
             "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(f:ARTICLE) return f;" \
             % (firstname, lastname)
@@ -118,7 +136,7 @@ def view_person():
             'key': 'Year',
             }];
 
-    print(pubyear_data)
+    # print(pubyear_data)
     try:
         affl=author.one.properties['Affiliation'][0]
     except:
@@ -135,6 +153,7 @@ def view_person():
             labels=author.one.labels,
             categories=biopharmcat,
             pubyear_data=pubyear_data,
+            affiliations=all_affils,
             )
 
 
