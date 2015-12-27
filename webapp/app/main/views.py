@@ -27,6 +27,52 @@ def main_page():
             category=category)
 
 
+@main.route('/affil', methods=['GET', 'POST'])
+def show_affil():
+    affil_labels = request.args.get('labels').replace('::', ':')
+    affil_name = request.args.get('name')
+    affiliation = affil_labels+'|'+affil_name
+    labels = graph.cypher.execute("MATCH (n) return labels(n);")
+    select_labels = set()
+    for lab in labels:
+        for l in lab[0]: select_labels.add(l)
+    category = request.args.get('category', 'all')  # category
+    return render_template('affiliation.html',
+            alllabels=ALLLABELS, select_labels=list(select_labels),
+            all_categories=['vaccine', 'stem cell'],
+            affiliation=affiliation,
+            affil_labels=affil_labels,
+            affil_name=affil_name,
+            category=category)
+
+
+@main.route('/_get_affiliation_list')
+def get_affil_list():
+    # category = 'all'
+    print('Affiliation', request.args.get('affiliation'))
+    affil_labels, affil_name = request.args.get('affiliation').split('|')
+    category = request.args.get('category', 'all')  # category
+    alist = []
+    if category == "all":
+        command = 'START n=node(*) MATCH (n:AUTHOR)-[:IN*..]->(m:%s {name:"%s"}) return distinct(n),m' % (affil_labels, affil_name)
+    else:
+        command = 'START n=node(*) MATCH (p:ARTICLE {BiopharmCategory:"%s"})<-[COAUTHOR]-(n:AUTHOR)-[:IN*..]->(m:%s {name:"%s"}) return distinct(n),m' % (category, affil_labels, affil_name)
+
+    results = graph.cypher.execute(command)
+    for r in results:
+        firstname = r.n.properties.get('ForeName', '')
+        lastname = r.n.properties.get('LastName', '')
+        initials = r.n.properties.get('Initials', '')
+        try:
+            affl = r.n.properties['Affiliation'][0]
+        except:
+            affl = 'Not Available'
+        if firstname.strip() and lastname.strip():
+            alist.append([firstname, lastname, initials, affl, 0])
+
+    return jsonify(data=alist)
+
+
 @main.route('/_get_people_list')
 def get_people_list():
     # category = 'all'
