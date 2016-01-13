@@ -246,7 +246,7 @@ def view_person():
             {'data': {
                 'id': lastname,
                 'name': firstname + '\n' + lastname,
-                'favShape': 'triangle',
+                'favShape': 'ellipse',
                 'favColor': '#993399'
                 }}
             )
@@ -262,8 +262,15 @@ def view_person():
         if coauthor_key not in coauthor_dict:
             coauthor_dict[coauthor_key] = Coauthor(cofirstname, colastname)
 
-    for k, p in coauthor_dict.iteritems():
-        print(coauthor_count[k], p.firstname, p.lastname)
+    top_coauthors = [(coauthor_dict[k], coauthor_count[k]) for k in
+                        coauthor_dict]
+    top_coauthors = sorted(top_coauthors,
+                            key=lambda x: x[1], reverse=True)
+    if len(top_coauthors) > 20:
+        top_coauthors = top_coauthors[:20]
+
+    for item in top_coauthors:
+        p = item[0]
         node = {'data': {
             'id': p.lastname,
             'name': p.firstname + '\n' + p.lastname,
@@ -276,9 +283,9 @@ def view_person():
             }
         edge = {'data': {
             'id': p.lastname + lastname,
-            'source': p.lastname,
-            'target': lastname,
-            'weight': coauthor_count[k],
+            'source': lastname,
+            'target': p.lastname,
+            'weight': item[1],
             }}
         coauthor_nodes.append(node)
         coauthor_edges.append(edge)
