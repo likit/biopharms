@@ -9,6 +9,21 @@
 <link rel="stylesheet" type="text/css"
     href="{{ url_for('static', filename='nvd3/build/nv.d3.min.css') }}">
 <style>
+    body { 
+      font: 14px helvetica neue, helvetica, arial, sans-serif;
+    }
+
+    #cy {
+        position: absolute;
+        height: 100%;
+        width: 80%;
+        {# left: 0; #}
+        {# top: 0; #}
+        {# bottom: 0; #}
+        {# right: 17em; #}
+        display: block;
+        z-index: 999;
+    }
 </style>
 {% endblock %}
 
@@ -63,16 +78,62 @@
     $(document).ready(function() {
         var cy = cytoscape({
             container: $('#cy'),
-            elements: {
-                nodes: [
-                        {data: {id: 'a', name: 'a'}},
-                        {data: {id: 'b', name: 'b'}},
-                ],
-                edges: [
-                    {data: {id: 'ab', source: 'a', target: 'b'}}
-                ]
-            },
+            style: cytoscape.stylesheet()
+                .selector('node')
+                .css({
+                    'shape': 'data(favShape)',
+                    'content': 'data(name)',
+                    'text-valign': 'center',
+                    'color': 'white',
+                    'text-outline-width': 2,
+                    'text-outline-color': 'data(favColor)',
+                    'background-color': 'data(favColor)',
+                })
+            .selector('edge')
+                .css({
+                    'opacity': 0.666,
+                    'width': 'data(weight)',
+                    'target-arrow-shape': 'triangle',
+                    'line-color': '#6FB1FC',
+                    'target-arrow-color': '#6FB1FC',
+                    'source-arrow-color': '#6FB1FC',
+                })
+            .selector(':selected')
+            .css({
+                'background-color': 'black',
+                'line-color': 'black',
+                'target-arrow-color': 'black',
+                'source-arrow-color': 'black',
+                'text-outline-color': 'black'
+            }),
+            elements: {{ coauthor_graph|tojson|safe }},
+            userZoomingEnabled: false,
         })
+
+        var options = {
+            name: "random",
+            {# refresh: 20, #}
+            animate: true,
+            {# fit: true, #}
+            {# padding: 30, #}
+            {# componentSpacing: 40, #}
+            {# nodeRepulsion: function(node) { return 400000; }, #}
+            {# nodeOverlap: 10, #}
+            {# idealEdgeLength: function(edge) { return 100; }, #}
+            {# edgeElasticity: function(edge){ return 100; }, #}
+            {# gravity: 80, #}
+            {# initialTemp: 200, #}
+            {# coolingFactor: 0.95, #}
+            {# useMultitasking: true, #}
+            animationThreshold: 250,
+            animationDuration: 500,
+            ready: undefined,
+            stop: undefined,
+        }
+        cy.layout(options);
+        cy.on('tap', 'node', function() {
+            window.location.href = this.data('href');
+        });
     });
 </script>
 <script>
@@ -118,23 +179,24 @@ nv.addGraph(function() {
                 {% for a in affiliations %}
                 <p>
                     {% for f in a %}
-                    <a href="{{ url_for("main.show_affil", labels=f[0], name=f[1]) }}">{{ f[1] }}</a>
+                    <a class="btn btn-sm btn-default" role="button" href="{{ url_for("main.show_affil", labels=f[0], name=f[1]) }}">{{ f[1] }}</a>
                     {% endfor %}
+                    <br>
                 </p>
                 {% endfor %}
             </h4>
             <h4>
                 {% for kw in keywords %}
-                <button class="btn btn-primary btn-sm">{{ kw }}</button>
+                <a class="btn btn-default btn-sm" href="#">{{ kw }}</a>
                 {% endfor %}
             </h4>
         <div id='pubyear_chart'><svg></svg></div>
         </div>
     </div>
     <div class="panel panel-default">
-        <div class="panel-heading"><h3>Typography</h3></div>
-        <div class="panel-body">
-            <div id='cy'>Graph</div>
+        <div class="panel-heading"><h3>Coauthor Network</h3></div>
+        <div class="panel-body" style="height: 600px">
+            <div id="cy"></div>
         </div>
     </div>
     <div class="panel panel-default">
