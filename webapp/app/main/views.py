@@ -1,17 +1,61 @@
+import urllib
 from datetime import datetime
 from . import main
 from .. import graph
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 from flask import (Flask, render_template, session,
                     request, redirect, url_for, flash, jsonify)
 
 
 ALLLABELS = ['PUBMED', 'SCOPUS']
+ALL_CATEGORIES = ['vaccine', 'stem cell',
+                    'therapeutic antibody',
+                    'therapeutic peptide']
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
     return render_template('index.html')
+
+
+@main.route('/top_rank', methods=['GET', 'POST'])
+def top_rank():
+    labels = graph.cypher.execute("MATCH (n) return labels(n);")
+    select_labels = set()
+    for lab in labels:
+        for l in lab[0]: select_labels.add(l)
+    category = request.args.get('category', 'all')  # category
+    return render_template('toprank.html',
+            alllabels=ALLLABELS, select_labels=list(select_labels),
+            all_categories=ALL_CATEGORIES,
+            category=category)
+
+@main.route('/_get_toprank_list')
+def get_toprank_list():
+    # category = 'all'
+    category = request.args.get('category', 'all')  # category
+    alist = []
+    if category == "all":
+        command = "start n=node(*) match (n:AUTHOR)--(c:ARTICLE) return n, count(*) as connections order by connections desc limit 50;"
+    else:
+        command = 'start n=node(*) match (n:AUTHOR)--(c:ARTICLE {BiopharmCategory:"%s"}) return n, count(*) as connections order by connections desc limit 50;' % (category)
+
+    results = graph.cypher.execute(command)
+    for r in results:
+        firstname = r.n.properties.get('ForeName', '')
+        lastname = r.n.properties.get('LastName', '')
+        initials = r.n.properties.get('Initials', '')
+        pub_count = r.connections
+        try:
+            affl = r.n.properties['Affiliation'][0]
+        except:
+            affl = 'Not Available'
+        if firstname.strip() and lastname.strip():
+            # alist.append([firstname, lastname, initials, affl, 0])
+            alist.append([firstname, lastname, initials, affl, 0, pub_count])
+
+    return jsonify(data=alist)
+
 
 
 @main.route('/main_page', methods=['GET', 'POST'])
@@ -23,7 +67,7 @@ def main_page():
     category = request.args.get('category', 'all')  # category
     return render_template('main.html',
             alllabels=ALLLABELS, select_labels=list(select_labels),
-            all_categories=['vaccine', 'stem cell'],
+            all_categories=ALL_CATEGORIES,
             category=category)
 
 
@@ -39,7 +83,7 @@ def show_affil():
     category = request.args.get('category', 'all')  # category
     return render_template('affiliation.html',
             alllabels=ALLLABELS, select_labels=list(select_labels),
-            all_categories=['vaccine', 'stem cell'],
+            all_categories=ALL_CATEGORIES,
             affiliation=affiliation,
             affil_labels=affil_labels,
             affil_name=affil_name,
@@ -128,22 +172,26 @@ def view_person():
             % (firstname, lastname)
     author = graph.cypher.execute(cypher_command)
 
-    cypher_command = \
-            "start n = node(*) match p=(n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:IN]->(m) return n,m ORDER BY r.year DESC LIMIT 5;" % (firstname, lastname)
-    curr_affil = graph.cypher.execute(cypher_command)
-    all_affils = []
-    for c in curr_affil:
-        command = 'start n = node(*) match p=(n:%s {name:"%s"})-[r:IN*..]->(m) return n,m' \
-                        % (':'.join(c.m.labels), c.m.properties['name'])
-        results = graph.cypher.execute(command)
-        affil = set()
-        for a in results:
-            affil.add(('::'.join(a.m.labels), a.m.properties['name']))
-        affil.add(('::'.join(a.n.labels), a.n.properties['name']))
-        all_affils.append(affil)
+    # cypher_command = \
+    #         "start n = node(*) match p=(n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:IN]->(m) return n,m ORDER BY r.year DESC LIMIT 5;" % (firstname, lastname)
+    # curr_affil = graph.cypher.execute(cypher_command)
+    # for c in curr_affil:
+    #     print(c)
+    # all_affils = []
+    # for c in curr_affil:
+    #     command = 'start n = node(*) match p=(n:%s {name:"%s"})-[r:IN*..3]->(m) return n,m' \
+    #                     % (':'.join(c.m.labels), c.m.properties['name'])
+    #     print(command)
+    #     results = graph.cypher.execute(command)
+    #     print(results)
+    #     affil = set()
+    #     for a in results:
+    #         affil.add(('::'.join(a.m.labels), a.m.properties['name']))
+    #     affil.add(('::'.join(a.n.labels), a.n.properties['name']))
+    #     all_affils.append(affil)
 
-    for a in all_affils:
-        print(a)
+    # for a in all_affils:
+    #     print(a)
 
     cypher_command = \
             "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(f:ARTICLE) return f;" \
@@ -189,6 +237,55 @@ def view_person():
         affl = 'Affiliation Not Available'
     initials = author.one.properties.get('Initials', '')
 
+    cypher_command = \
+            "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(c)<-[g:COAUTHOR]-(f:AUTHOR) return f;" % (firstname, lastname)
+    coauthors = graph.cypher.execute(cypher_command)
+    coauthor_nodes = []
+    coauthor_edges = []
+    coauthor_nodes.append(
+            {'data': {
+                'id': lastname,
+                'name': firstname + '\n' + lastname,
+                'favShape': 'triangle',
+                'favColor': '#993399'
+                }}
+            )
+    coauthor_dict = {}
+    coauthor_count = defaultdict(int)
+    coauth_id = 0
+    Coauthor = namedtuple('Coauthor', ['firstname', 'lastname'])
+    for p in coauthors:
+        cofirstname = p.f.properties.get('ForeName', '')
+        colastname = p.f.properties.get('LastName', '')
+        coauthor_key = '%s-%s' % (cofirstname, colastname)
+        coauthor_count[coauthor_key] += 1
+        if coauthor_key not in coauthor_dict:
+            coauthor_dict[coauthor_key] = Coauthor(cofirstname, colastname)
+
+    for k, p in coauthor_dict.iteritems():
+        print(coauthor_count[k], p.firstname, p.lastname)
+        node = {'data': {
+            'id': p.lastname,
+            'name': p.firstname + '\n' + p.lastname,
+            'favShape': 'ellipse',
+            'favColor': '#0066ff',
+            'href': urllib.unquote("%s" %
+                        url_for('main.view_person', fullname='%s|%s' %
+                        (p.firstname, p.lastname)))
+                }
+            }
+        edge = {'data': {
+            'id': p.lastname + lastname,
+            'source': p.lastname,
+            'target': lastname,
+            'weight': coauthor_count[k],
+            }}
+        coauthor_nodes.append(node)
+        coauthor_edges.append(edge)
+        print(edge)
+
+    coauthor_graph = {'nodes': coauthor_nodes, 'edges': coauthor_edges}
+
     return render_template('person.html',
             fullname=fullname,
             firstname=firstname,
@@ -199,8 +296,9 @@ def view_person():
             labels=author.one.labels,
             categories=biopharmcat,
             pubyear_data=pubyear_data,
-            affiliations=all_affils,
-            )
+            # affiliations=all_affils,
+            coauthor_graph=coauthor_graph,
+           )
 
 
 @main.route('/_get_pub_list', methods=['GET', 'POST'])
@@ -277,6 +375,8 @@ def pub_summary():
             category_year_sum.append({'values':
                 [x for x in category_year_data], 'key': k})
 
+    for c in category_year_sum:
+        print c
     return render_template('pubsummary.html',
             category_year_sum=category_year_sum,
             keyword_year_sum=keyword_year_sum,
