@@ -86,7 +86,7 @@
                     'text-valign': 'center',
                     'color': 'white',
                     'text-outline-width': 2,
-                    'text-outline-color': 'data(favColor)',
+                    'text-outline-color': 'black',
                     'background-color': 'data(favColor)',
                 })
             .selector('edge')
@@ -94,9 +94,12 @@
                     'opacity': 0.666,
                     'width': 'data(weight)',
                     'target-arrow-shape': 'triangle',
-                    'line-color': '#6FB1FC',
-                    'target-arrow-color': '#6FB1FC',
-                    'source-arrow-color': '#6FB1FC',
+                    'line-color': '#0099cc',
+                    'target-arrow-color': '#0099cc',
+                    'source-arrow-color': '#0099cc',
+                    'label': 'data(label)',
+                    'edge-text-valign': 'top',
+                    'edge-text-halign': 'center',
                 })
             .selector(':selected')
             .css({
