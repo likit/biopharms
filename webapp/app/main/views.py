@@ -36,11 +36,11 @@ def get_toprank_list():
     category = request.args.get('category', 'all')  # category
     alist = []
     if category == "all":
-        command = "start n=node(*) match (n:AUTHOR)--(c:ARTICLE) return n, count(*) as connections order by connections desc limit 50;"
+        command = "start n=node(*) match (n:AUTHOR)--(c:ARTICLE) return n, count(c) as connections order by connections desc limit 50;"
     else:
-        command = 'start n=node(*) match (n:AUTHOR)--(c:ARTICLE {BiopharmCategory:"%s"}) return n, count(*) as connections order by connections desc limit 50;' % (category)
-
+        command = 'start n=node(*) match (n:AUTHOR)--(c:ARTICLE {BiopharmCategory:"%s"}) return n, count(c) as connections order by connections desc limit 50;' % (category)
     results = graph.cypher.execute(command)
+
     for r in results:
         firstname = r.n.properties.get('ForeName', '')
         lastname = r.n.properties.get('LastName', '')
@@ -57,6 +57,58 @@ def get_toprank_list():
     return jsonify(data=alist)
 
 
+@main.route('/top_connectors', methods=['GET', 'POST'])
+def top_connectors():
+    labels = graph.cypher.execute("MATCH (n) return labels(n);")
+    select_labels = set()
+    for lab in labels:
+        for l in lab[0]: select_labels.add(l)
+    category = request.args.get('category', 'all')  # category
+    return render_template('top_connectors.html',
+            alllabels=ALLLABELS, select_labels=list(select_labels),
+            all_categories=ALL_CATEGORIES,
+            category=category)
+
+@main.route('/_get_top_connectors_list')
+def get_top_connectors_list():
+    # category = 'all'
+    category = request.args.get('category', 'all')  # category
+    alist = []
+    if category == "all":
+        command = \
+                "start n=node(*) MATCH (n:AUTHOR)-[r:COAUTHOR]->(c:ARTICLE)<-[g:COAUTHOR]-(f:AUTHOR) return n, count(distinct(f)) as connections order by connections desc limit 50;"
+    else:
+        command = \
+        "start n=node(*) MATCH (n:AUTHOR)-[r:COAUTHOR]->(c:ARTICLE {BiopharmCategory:'%s'})<-[g:COAUTHOR]-(f:AUTHOR) return n, count(distinct(f)) as connections order by connections desc limit 50;" % (category)
+    results = graph.cypher.execute(command)
+
+    if category == "all":
+        command = "match (n:AUTHOR {ForeName:\"%s\", LastName:\"%s\"})--(c:ARTICLE) return n, count(c) as numpub;"
+    else:
+        command = "match (n:AUTHOR {ForeName:\"%s\", LastName:\"%s\"})--(c:ARTICLE {BiopharmCategory:\"%s\"}) return count(c) as numpub;"
+    for r in results:
+        firstname = r.n.properties.get('ForeName', '')
+        lastname = r.n.properties.get('LastName', '')
+        initials = r.n.properties.get('Initials', '')
+        coauthor_count = r.connections
+
+        if category == 'all':
+            results = graph.cypher.execute(command % (firstname, lastname))
+        else:
+            results = graph.cypher.execute(command % (firstname, lastname, category))
+        for c in results:
+            numpub = c.numpub
+        try:
+            affl = r.n.properties['Affiliation'][0]
+        except:
+            affl = 'Not Available'
+        if firstname.strip() and lastname.strip():
+            # alist.append([firstname, lastname, initials, affl, 0])
+            ratio = round(float(coauthor_count)/numpub, 2)
+            alist.append([firstname, lastname, initials, affl, 0,
+                            coauthor_count, numpub, ratio])
+
+    return jsonify(data=alist)
 
 @main.route('/main_page', methods=['GET', 'POST'])
 def main_page():
@@ -123,10 +175,10 @@ def get_people_list():
     print('Category', request.args.get('category'))
     category = request.args.get('category', 'all')
     if category == "all":
-        cypher_command = "MATCH (n:AUTHOR) return n;"
+        cypher_command = "MATCH (n:AUTHOR) return distinct(n);"
     else:
         cypher_command = \
-            'MATCH (n:AUTHOR)-[COAUTHOR]->(g:ARTICLE {BiopharmCategory: "%s"}) return n;' % category
+            'MATCH (n:AUTHOR)-[COAUTHOR]->(g:ARTICLE {BiopharmCategory: "%s"}) return distinct(n);' % category
     people = graph.cypher.execute(cypher_command)
     alist = []
     for p in people:
@@ -147,7 +199,7 @@ def get_people_list():
 def get_coauthor_list():
     firstname, lastname = request.args.get('fullname').split('|')
     cypher_command = \
-            "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(c)<-[g:COAUTHOR]-(f:AUTHOR) return f;" % (firstname, lastname)
+            "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(c)<-[g:COAUTHOR]-(f:AUTHOR) return distinct(f);" % (firstname, lastname)
     people = graph.cypher.execute(cypher_command)
     alist = []
     for p in people:
@@ -266,8 +318,8 @@ def view_person():
                         coauthor_dict]
     top_coauthors = sorted(top_coauthors,
                             key=lambda x: x[1], reverse=True)
-    if len(top_coauthors) > 20:
-        top_coauthors = top_coauthors[:20]
+    if len(top_coauthors) > 30:
+        top_coauthors = top_coauthors[:30]
 
     for item in top_coauthors:
         p = item[0]
@@ -286,10 +338,10 @@ def view_person():
             'source': lastname,
             'target': p.lastname,
             'weight': item[1],
+            'label': str(item[1])
             }}
         coauthor_nodes.append(node)
         coauthor_edges.append(edge)
-        print(edge)
 
     coauthor_graph = {'nodes': coauthor_nodes, 'edges': coauthor_edges}
 
