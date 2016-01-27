@@ -18,7 +18,7 @@ for row in record['eGQueryResult']:
     if row['DbName'] == 'pubmed':
         retmax = row['Count']
         break
-
+# retmax = 20
 handle = Entrez.esearch(db="pubmed", term=search_term, retmax=retmax)
 record = Entrez.read(handle)
 

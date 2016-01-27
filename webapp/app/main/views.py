@@ -214,6 +214,72 @@ def get_coauthor_list():
 
     return jsonify(data=alist)
 
+@main.route('/view_keyword')
+def view_keyword():
+    keyword = request.args.get('keyword')
+    cypher_command = \
+        "MATCH (n:KEYWORD {word:\"%s\"})-[]-(ARTICLE)-[]-(a:AUTHOR) return n, a;" \
+        % ('HIV')
+    authors = graph.cypher.execute(cypher_command)
+    coauthor_nodes = []
+    coauthor_edges = []
+    coauthor_nodes.append(
+            {'data': {
+                'id': keyword,
+                'name': keyword,
+                'favShape': 'ellipse',
+                'favColor': '#993399'
+                }}
+            )
+    coauthor_dict = {}
+
+    Coauthor = namedtuple('Coauthor', ['firstname', 'lastname'])
+
+    alist = []
+
+    for p in authors:
+        print(p)
+        firstname = p.a.properties.get('ForeName', '')
+        lastname = p.a.properties.get('LastName', '')
+        coauthor_key = '%s-%s' % (firstname, lastname)
+        if coauthor_key not in coauthor_dict:
+            coauthor_dict[coauthor_key] = Coauthor(firstname, lastname)
+        initials = p.a.properties.get('Initials', '')
+        try:
+            affl = p.a.properties['Affiliation'][0]
+        except:
+            affl = 'Not Available'
+        if firstname.strip() and lastname.strip():
+            alist.append([firstname, lastname, initials, affl, 0])
+
+
+    for k, p in coauthor_dict.iteritems():
+        print('coauthor', p)
+        node = {'data': {
+            'id': p.lastname,
+            'name': p.firstname + '\n' + p.lastname,
+            'favShape': 'ellipse',
+            'favColor': '#0066ff',
+            'href': urllib.unquote("%s" %
+                        url_for('main.view_person', fullname='%s|%s' %
+                        (p.firstname, p.lastname)))
+                }
+            }
+        edge = {'data': {
+            'id': p.lastname + lastname,
+            'source': p.lastname,
+            'target': keyword,
+            }}
+        coauthor_nodes.append(node)
+        coauthor_edges.append(edge)
+
+    coauthor_graph = {'nodes': coauthor_nodes, 'edges': coauthor_edges}
+
+    return render_template('keywords.html',
+            keyword=keyword,
+            coauthor_graph=coauthor_graph,
+            alist=alist,
+           )
 
 @main.route('/view_person')
 def view_person():
@@ -258,7 +324,7 @@ def view_person():
     for p in pubs:
         if p.f.properties['Keywords']:
             for word in (p.f.properties['Keywords'].split(',')):
-                kw.add(word.lower())
+                kw.add(word)
         if p.f.properties['BiopharmCategory']:
             biopharmcat.add(p.f.properties['BiopharmCategory'])
         if p.f.properties['ArticleDate']:

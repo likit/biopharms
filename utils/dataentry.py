@@ -13,6 +13,22 @@ py2neo.authenticate("localhost:7474", "neo4j", NEO4J_PASSWORD)
 graph = Graph("http://localhost:7474/db/data")
 
 
+def create_keyword_nodes(pub):
+    labels = ['KEYWORD']
+    kw_nodes = []
+    if pub.properties['Keywords']:
+        for kw in pub.properties['Keywords'].split(','):
+            node = Node.cast(labels, {'word': kw})
+            kw_nodes.append(node)
+
+        for i in range(len(kw_nodes)-1):
+            path = Path(kw_nodes[i], 'RELATE', kw_nodes[i+1])
+            graph.create(path)
+        r = Relationship(pub, 'HAS', kw_nodes[0])
+        graph.create(r)
+    else:
+        return
+
 def add_pubmed(pub_data, authors):
     # Create publication
     print("\tCreating publication node")
@@ -21,8 +37,10 @@ def add_pubmed(pub_data, authors):
     pub_node, = graph.create(node)
     # print("Node - ", pub_node)
 
-    article_date = datetime.strptime(pub_data['ArticleDate'],
-                                                '%Y-%m-%dT%H:%M:%S')
+    # add keyword graph
+    create_keyword_nodes(pub_node)
+    article_date = pub_data['ArticleDate']
+
     # Create authors
     print('\tSearching/creating author nodes..')
     labels = ['AUTHOR']
@@ -33,20 +51,25 @@ def add_pubmed(pub_data, authors):
             'MATCH (n:AUTHOR {LastName: "%s", ForeName: "%s"}) return n;' \
             % (author['LastName'], author['ForeName'])
         found_authors = graph.cypher.execute(cypher_command)
-        if len(found_authors) == 0:
+        firstnames = set()
+        for auth in found_authors:
+            firstnames.add(auth.n.properties['ForeName'].lower())
+
+        if author['ForeName'].lower() not in firstnames:
             print('\t\tNot found.')
             node = Node.cast(labels, author)
             auth, = graph.create(node)
             r = Relationship(auth, 'COAUTHOR', pub_node, ambiguous=False)
             coauthor_path = graph.create(r)
-            add_affil(auth, graph, article_date)
-        elif len(found_authors) >= 1:
+            # add_affil(auth, graph, article_date)
+        else:
             print('\t\tFound %d persons.' % len(found_authors))
             for auth in found_authors:
                 r = Relationship(auth.n, 'COAUTHOR', pub_node, ambiguous=True)
                 auth.n.properties['Affiliation'] += author['Affiliation']
                 coauthor_path = graph.create(r)
-                add_affil(auth, graph, article_date)
+                # assume that the latest affil is current
+                # add_affil(auth.n, graph, article_date)
 
 
 if __name__=='__main__':

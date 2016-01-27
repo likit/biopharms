@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block title %}Main{% endblock %}
+{% block page_content %}
+<div class="page-header">
+    <div class="jumbotron">
+        <h2>Welcome to</h2>
+        <h1>Thai Biopharmaceutical<br>Research Database</h1>
+        <p>By National Science Technology and Innovation Policy Office,
+        Mahidol University and Chulalongkorn University</p>
+        <p><a class="btn btn-success btn-lg" href="#" role="button">
+            Learn more</a>
+        <a class="btn btn-primary btn-lg" href="{{ url_for('main.top_rank', category='all') }}"
+            role="button">Enter</a></p>
+    </div>
+</div>
+{% endblock %}

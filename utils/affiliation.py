@@ -1,4 +1,5 @@
 import py2neo
+import datetime
 from py2neo import Graph, Node, Relationship, Rev, Path
 from nltk.chunk import ChunkParserI
 from nltk.chunk.util import conlltags2tree
@@ -85,51 +86,52 @@ PLACE: {<DT>?<NN.*>+<IN>?<NN.*>+}
 
 cp = RegexpParser(grammar)
 
-def add_affil(auth, graph, article_date):
+def add_affil(auth, graph, article_date=datetime.datetime.utcnow()):
     '''Adds affiliations to a given author or the db.'''
     # cypher_command = 'MATCH (n:AUTHOR) return n;'
     # found_authors = graph.cypher.execute(cypher_command)
+    # print(len(found_authors))
+    # for auth in found_authors: break
+
+    # auth = auth.n
 
     location = LocationChunker()
-    for af in auth.n.properties['Affiliation']:
+    for af in auth.properties['Affiliation']:
         for loc in af.split(';'):
             affset = []
             for loc_chunk in loc.split(','):
-                place_tree = cp.parse(pos_tag(word_tokenize(loc_chunk)))
-                for subtree in place_tree.subtrees():
-                    if subtree.label() == 'PLACE':
-                        for n, tag in subtree.leaves():
-                            if n.lower() in institutions:
-                                # print(subtree, '-->', n.upper())
-                                aff_name = \
-                                ' '.join([x[0] for x in subtree.leaves()])
-                                node = graph.merge_one(n.upper(),
-                                        'name', aff_name)
-                                node.labels.add('AFFILIATION')
-                                node.push()
-                                # print(node)
-                                affset.append(node)
-                                break
-                    else:
-                        p = location.parse(subtree.leaves())
-                        for subtree in p.subtrees():
-                            if subtree.label() == 'LOCATION':
-                                loc_name = \
-                                ' '.join([x[0] for x in subtree.leaves()])
-                                node = graph.merge_one('LOCATION',
-                                        'name', loc_name)
-                                node.labels.add('AFFILIATION')
-                                node.push()
-                                # print(node)
-                                affset.append(node)
-                                break  # may need to be removed
-                                # print(subtree)
+                loc_chunk_token = word_tokenize(loc_chunk)
+                find_loc = True
+                for n in loc_chunk_token:
+                    if n.lower() in institutions:
+                        aff_name = ' '.join(loc_chunk_token)
+                        node = graph.merge_one(n.upper(),
+                                'name', aff_name)
+                        node.labels.add('AFFILIATION')
+                        node.push()
+                        affset.append(node)
+                        find_loc = False
+                if find_loc:
+                    p = location.parse([(c, 'NN') for c in loc_chunk_token])
+                    for subtree in p.subtrees():
+                        if subtree.label() == 'LOCATION':
+                            loc_name = \
+                            ' '.join([x[0] for x in subtree.leaves()])
+                            node = graph.merge_one('LOCATION',
+                                    'name', loc_name)
+                            node.labels.add('AFFILIATION')
+                            node.push()
+                            affset.append(node)
+                            break  # may need to be removed
             if len(affset) > 1:
                 for i in range(len(affset)-1):
                     path = Path(affset[i], 'IN', affset[i+1])
                     graph.create(path)
-            else:
-                graph.create(affset[0])
-            rel = Relationship(auth.n, 'IN', affset[0], year=article_date,
-                    ambiguous=False)
-            graph.create(rel)
+
+            if len(affset) > 0:
+                rel = Relationship(auth, 'IN', affset[0], year=article_date,
+                        ambiguous=False)
+                graph.create(rel)
+
+if __name__=='__main__':
+    add_affil(graph,)

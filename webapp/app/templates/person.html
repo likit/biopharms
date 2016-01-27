@@ -190,7 +190,7 @@ nv.addGraph(function() {
             </h4>
             <h4>
                 {% for kw in keywords %}
-                <a class="btn btn-default btn-sm" href="#">{{ kw }}</a>
+                <a class="btn btn-default btn-sm" href="{{ url_for('main.view_keyword', keyword=kw) }}">{{ kw }}</a>
                 {% endfor %}
             </h4>
         <div id='pubyear_chart'><svg></svg></div>

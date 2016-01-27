@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block styles %}
+{{ super() }}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css"
+    href="{{ url_for('static', filename='DataTables-1.10.10/media/css/jquery.dataTables.css') }}">
+<link rel="stylesheet" type="text/css"
+    href="{{ url_for('static', filename='nvd3/build/nv.d3.min.css') }}">
+<style>
+    body { 
+      font: 14px helvetica neue, helvetica, arial, sans-serif;
+    }
+
+    #cy {
+        position: absolute;
+        height: 100%;
+        width: 80%;
+        {# left: 0; #}
+        {# top: 0; #}
+        {# bottom: 0; #}
+        {# right: 17em; #}
+        display: block;
+        z-index: 999;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- jQuery -->
+<script type="text/javascript" charset="utf8"
+    src="{{ url_for('static', filename='DataTables-1.10.10/media/js/jquery.js')}}"></script>
+<!-- D3 -->
+<script type="text/javascript" charset="utf8"
+    src="{{ url_for('static', filename='d3.min.js')}}"></script>
+<!-- DataTables -->
+<script type="text/javascript" charset="utf8"
+    src="{{ url_for('static', filename='DataTables-1.10.10/media/js/jquery.dataTables.js') }}"></script>
+<!-- nvd3 -->
+<script type="text/javascript" charset="utf8"
+    src="{{ url_for('static', filename='nvd3/build/nv.d3.min.js')}}"></script>
+<!-- Cytoscape -->
+<script type="text/javascript" charset="utf8"
+    src="{{ url_for('static', filename='cytoscape.min.js')}}"></script>
+
+<script>$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};</script>
+
+<script>
+    $(document).ready( function () {
+        var mygrid = $('#coauthgrid').DataTable({
+            "processing": true,
+            "data": {{ alist|tojson|safe }},
+            "columnDefs": [
+                { "targets": [4],
+                    "data": null,
+                    "defaultContent": '<a href=# class=action-view><span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span></a>'
+                }]
+        });
+        $('#coauthgrid').on('click', '.action-view', function() {
+            var firstname = mygrid.row($(this).parents('tr').first()).data()[0];
+            var lastname = mygrid.row($(this).parents('tr').first()).data()[1];
+            var fullname = firstname + '|' + lastname;
+            window.location.href="{{ url_for('main.view_person', fullname='') }}" + fullname;
+        });
+    });
+</script>
+<script>
+    $(document).ready(function() {
+        var cy = cytoscape({
+            container: $('#cy'),
+            style: cytoscape.stylesheet()
+                .selector('node')
+                .css({
+                    'shape': 'data(favShape)',
+                    'content': 'data(name)',
+                    'text-valign': 'center',
+                    'color': 'white',
+                    'text-outline-width': 2,
+                    'text-outline-color': 'black',
+                    'background-color': 'data(favColor)',
+                })
+            .selector('edge')
+                .css({
+                    'opacity': 0.666,
+                    'target-arrow-shape': 'triangle',
+                    'line-color': '#0099cc',
+                    'target-arrow-color': '#0099cc',
+                    'source-arrow-color': '#0099cc',
+                })
+            .selector(':selected')
+            .css({
+                'background-color': 'black',
+                'line-color': 'black',
+                'target-arrow-color': 'black',
+                'source-arrow-color': 'black',
+                'text-outline-color': 'black'
+            }),
+            elements: {{ coauthor_graph|tojson|safe }},
+            userZoomingEnabled: false,
+        })
+
+        var options = {
+            name: "random",
+            {# refresh: 20, #}
+            animate: true,
+            {# fit: true, #}
+            {# padding: 30, #}
+            {# componentSpacing: 40, #}
+            {# nodeRepulsion: function(node) { return 400000; }, #}
+            {# nodeOverlap: 10, #}
+            {# idealEdgeLength: function(edge) { return 100; }, #}
+            {# edgeElasticity: function(edge){ return 100; }, #}
+            {# gravity: 80, #}
+            {# initialTemp: 200, #}
+            {# coolingFactor: 0.95, #}
+            {# useMultitasking: true, #}
+            animationThreshold: 250,
+            animationDuration: 500,
+            ready: undefined,
+            stop: undefined,
+        }
+        cy.layout(options);
+        cy.on('tap', 'node', function() {
+            window.location.href = this.data('href');
+        });
+    });
+</script>
+{% endblock %}
+
+{% block title %}Main{% endblock %}
+{% block page_content %}
+    <div>
+        <p><h1>Researcher Information</h1><div id="tags"></div></p>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading"><h3>Related Authors Network</h3></div>
+        <div class="panel-body" style="height: 600px">
+            <div id="cy"></div>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading"><h3>Coauthors</h3></div>
+        <div class="panel-body">
+            <table id="coauthgrid" class="display">
+                <thead>
+                    <tr>
+                        <th>First name</th>
+                        <th>Last name</th>
+                        <th>Initials</th>
+                        <th>Affiliation</th>
+                        <th>More..</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
