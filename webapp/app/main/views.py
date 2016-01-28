@@ -556,3 +556,41 @@ def pub_summary():
             category_data=category_data,
             all_categories=sorted(all_categories),
             )
+
+@main.route('/show_value_chain/', methods=['GET'])
+def show_value_chain():
+    ctg = request.args.get('category', 'all')  # category
+    if ctg == 'all':
+        cypher_command = \
+            'MATCH (n:ARTICLE)-[:COAUTHOR]-(a:AUTHOR) where has(n.BiopharmCategory) return distinct(a);'
+    else:
+        cypher_command = \
+            'MATCH (n:ARTICLE)-[:COAUTHOR]-(a:AUTHOR) where has(n.BiopharmCategory) and n.BiopharmCategory="%s" return distinct(a);' % ctg
+
+    authors = graph.cypher.execute(cypher_command)
+    value_chain = defaultdict(int)
+    for author in authors:
+        if author.a.properties['manualValueChain']:
+            for v in author.a.properties['manualValueChain']:
+                value_chain[v] += 1
+
+    value_chain_keys = {
+            'preclin': 'Preclinical research',
+            'clintrials': 'Clinical trials',
+            'randd': 'Research and development',
+            'manu': 'Manufacturing',
+            'sale': 'Marketing and Sale'
+            }
+    value_chain_data = [{
+            'values': [{'key': value_chain_keys[k],
+                'value': value_chain[k]} for k in
+                    ['randd', 'preclin', 'clintrials', 'manu', 'sale']],
+            'key': 'Phase',
+            }];
+    print(value_chain_data)
+
+    return render_template('value_chain.html',
+            all_categories=sorted(ALL_CATEGORIES),
+            value_chain_data=value_chain_data,
+            category=ctg,
+            )
