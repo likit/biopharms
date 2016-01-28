@@ -580,8 +580,7 @@ def show_value_chain():
                     affl = author.a.properties['Affiliation'][0]
                 except:
                     affl = 'Not Available'
-                if firstname.strip() and lastname.strip():
-                    alist[v].append([firstname, lastname, initials, affl, 0])
+                alist[v].append([firstname, lastname, initials, affl, 0])
 
     value_chain_keys = {
             'preclin': 'Preclinical research',

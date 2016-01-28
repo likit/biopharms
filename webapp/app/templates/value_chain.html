@@ -104,7 +104,7 @@
     $(document).ready( function () {
         var mygrid = $('#clintrials_authgrid').DataTable({
             "processing": true,
-            "data": {{ alist['preclin']|tojson|safe }},
+            "data": {{ alist['clintrials']|tojson|safe }},
             "columnDefs": [
                 { "targets": [4],
                     "data": null,
@@ -123,7 +123,7 @@
     $(document).ready( function () {
         var mygrid = $('#manu_authgrid').DataTable({
             "processing": true,
-            "data": {{ alist['preclin']|tojson|safe }},
+            "data": {{ alist['manu']|tojson|safe }},
             "columnDefs": [
                 { "targets": [4],
                     "data": null,
@@ -142,7 +142,7 @@
     $(document).ready( function () {
         var mygrid = $('#sale_authgrid').DataTable({
             "processing": true,
-            "data": {{ alist['preclin']|tojson|safe }},
+            "data": {{ alist['sale']|tojson|safe }},
             "columnDefs": [
                 { "targets": [4],
                     "data": null,
