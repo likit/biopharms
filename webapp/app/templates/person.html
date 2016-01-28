@@ -168,6 +168,42 @@ nv.addGraph(function() {
         <p><h1>Researcher Information</h1><div id="tags"></div></p>
     </div>
     <div class="panel panel-default">
+        <div class="panel-heading"><h3>Value Chain</h3></div>
+        <div class="panel-body">
+            <p>
+            {% for valchain in valuechain %}
+                <h3><span class="label label-success">{{ valchain }}</span></h3>
+            {% endfor %}
+            </p>
+            <h3>Please check items below to update values</h3>
+            <form action={{ url_for('main.value_chain') }} method="post">
+                {{ form.hidden_tag() }}
+                <div class="form-group" id="valueChainForm">
+                    <div class="input-group">
+                        {{ form.firstname(value=firstname, readonly=True) }}
+                        {{ form.lastname(value=lastname, readonly=True) }}
+                    </div>
+                    <div class="input-group">
+                        {{ form.randd() }} {{ form.randd.label(for='randd') }}
+                    </div>
+                    <div class="input-group">
+                        {{ form.preclin() }} {{ form.preclin.label(for='preclin') }}
+                    </div>
+                    <div class="input-group">
+                        {{ form.clintrials() }} {{ form.clintrials.label(for='clintrials') }}
+                    </div>
+                    <div class="input-group">
+                        {{ form.sale() }} {{ form.sale.label(for='sale') }}
+                    </div>
+                    <div class="input-group">
+                        {{ form.manu() }} {{ form.manu.label(for='manu') }}
+                    </div>
+                    {{ form.submit() }}
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="panel panel-default">
         <div class="panel-body">
             <h2>{{ firstname }} {{ lastname}} <button class="btn btn-default btn-lg">{{ initials }}</button>
                 {% for lab in labels %}

@@ -3,12 +3,13 @@ from datetime import datetime
 from . import main
 from .. import graph
 from collections import defaultdict, namedtuple
+from forms import valChainForm
 
 from flask import (Flask, render_template, session,
                     request, redirect, url_for, flash, jsonify)
 
 
-ALLLABELS = ['PUBMED', 'SCOPUS']
+ALLLABELS = ['PUBMED']
 ALL_CATEGORIES = ['vaccine', 'stem cell',
                     'therapeutic antibody',
                     'therapeutic peptide']
@@ -281,7 +282,40 @@ def view_keyword():
             alist=alist,
            )
 
-@main.route('/view_person')
+@main.route('/valuechain', methods=['POST', 'GET'])
+def value_chain():
+    form = valChainForm(request.form)
+    if form.validate_on_submit():
+        cypher_command = \
+                "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'}) return n;" \
+                % (form.firstname.data, form.lastname.data)
+        authors = graph.cypher.execute(cypher_command)
+        flash('Data added successfully.')
+        for author in authors:
+            print(author.n.properties['ForeName'],
+                    author.n.properties['LastName'])
+
+            print(author.n.properties.get('manualValueChain', None))
+            manualValueChain = set()
+            if form.randd.data:
+                manualValueChain.add('randd')
+            if form.preclin.data:
+                manualValueChain.add('preclin')
+            if form.clintrials.data:
+                manualValueChain.add('clintrials')
+            if form.manu.data:
+                manualValueChain.add('manu')
+            if form.sale.data:
+                manualValueChain.add('sale')
+            author.n.properties['manualValueChain'] = manualValueChain
+            print(author.n.properties.get('manualValueChain', None))
+            author.n.push()
+        return redirect(url_for('main.view_person', fullname=(
+            '%s|%s' % (form.firstname.data, form.lastname.data)
+            )))
+
+
+@main.route('/view_person', methods=['GET'])
 def view_person():
     fullname = request.args.get('fullname')
     firstname, lastname = fullname.split('|')
@@ -354,6 +388,14 @@ def view_person():
     except:
         affl = 'Affiliation Not Available'
     initials = author.one.properties.get('Initials', '')
+    valuechain_keys = {'clintrials': 'Clinical trials',
+            'preclin': 'Preclinical research',
+            'manu': 'Manufacturing',
+            'sale': 'Marketing and Sale',
+            'randd': 'Research and Development'}
+    valuechain = set()
+    for v in author.one.properties.get('manualValueChain', set()):
+        valuechain.add(valuechain_keys[v])
 
     cypher_command = \
             "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(c)<-[g:COAUTHOR]-(f:AUTHOR) return f;" % (firstname, lastname)
@@ -410,6 +452,9 @@ def view_person():
         coauthor_edges.append(edge)
 
     coauthor_graph = {'nodes': coauthor_nodes, 'edges': coauthor_edges}
+    valchain_form = valChainForm()
+    # if valchain_form.validate_on_submit():
+    #     print(valchain_form.data.randd)
 
     return render_template('person.html',
             fullname=fullname,
@@ -423,6 +468,8 @@ def view_person():
             pubyear_data=pubyear_data,
             # affiliations=all_affils,
             coauthor_graph=coauthor_graph,
+            form=valchain_form,
+            valuechain=valuechain,
            )
 
 
