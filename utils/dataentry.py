@@ -8,9 +8,9 @@ from py2neo import Graph, Node, Relationship, Rev, Path
 from affiliation import add_affil
 from datetime import datetime
 
-NEO4J_PASSWORD = 'Intrinity0'
-py2neo.authenticate("localhost:7474", "neo4j", NEO4J_PASSWORD) 
-graph = Graph("http://localhost:7474/db/data")
+NEO4J_PASSWORD = 'neo4j'
+py2neo.authenticate("188.166.235.1:7474", "neo4j", NEO4J_PASSWORD) 
+graph = Graph("http://188.166.235.1:7474/db/data")
 
 
 def create_keyword_nodes(pub):
