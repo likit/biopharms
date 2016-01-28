@@ -239,7 +239,6 @@ def view_keyword():
     alist = []
 
     for p in authors:
-        print(p)
         firstname = p.a.properties.get('ForeName', '')
         lastname = p.a.properties.get('LastName', '')
         coauthor_key = '%s-%s' % (firstname, lastname)
@@ -569,10 +568,20 @@ def show_value_chain():
 
     authors = graph.cypher.execute(cypher_command)
     value_chain = defaultdict(int)
+    alist = defaultdict(list)
     for author in authors:
         if author.a.properties['manualValueChain']:
             for v in author.a.properties['manualValueChain']:
                 value_chain[v] += 1
+                firstname = author.a.properties.get('ForeName', '')
+                lastname = author.a.properties.get('LastName', '')
+                initials = author.a.properties.get('Initials', '')
+                try:
+                    affl = author.a.properties['Affiliation'][0]
+                except:
+                    affl = 'Not Available'
+                if firstname.strip() and lastname.strip():
+                    alist[v].append([firstname, lastname, initials, affl, 0])
 
     value_chain_keys = {
             'preclin': 'Preclinical research',
@@ -593,4 +602,5 @@ def show_value_chain():
             all_categories=sorted(ALL_CATEGORIES),
             value_chain_data=value_chain_data,
             category=ctg,
+            alist=alist,
             )

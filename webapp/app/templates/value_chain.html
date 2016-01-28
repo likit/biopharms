@@ -62,6 +62,101 @@
 {#         }); #}
 {#     }); #}
 </script>
+<script>
+    $(document).ready( function () {
+        var mygrid = $('#randd_authgrid').DataTable({
+            "processing": true,
+            "data": {{ alist['randd']|tojson|safe }},
+            "columnDefs": [
+                { "targets": [4],
+                    "data": null,
+                    "defaultContent": '<a href=# class=action-view><span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span></a>'
+                }]
+        });
+        $('#rannd_authgrid').on('click', '.action-view', function() {
+            var firstname = mygrid.row($(this).parents('tr').first()).data()[0];
+            var lastname = mygrid.row($(this).parents('tr').first()).data()[1];
+            var fullname = firstname + '|' + lastname;
+            window.location.href="{{ url_for('main.view_person', fullname='') }}" + fullname;
+        });
+    });
+</script>
+<script>
+    $(document).ready( function () {
+        var mygrid = $('#preclin_authgrid').DataTable({
+            "processing": true,
+            "data": {{ alist['preclin']|tojson|safe }},
+            "columnDefs": [
+                { "targets": [4],
+                    "data": null,
+                    "defaultContent": '<a href=# class=action-view><span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span></a>'
+                }]
+        });
+        $('#preclin_authgrid').on('click', '.action-view', function() {
+            var firstname = mygrid.row($(this).parents('tr').first()).data()[0];
+            var lastname = mygrid.row($(this).parents('tr').first()).data()[1];
+            var fullname = firstname + '|' + lastname;
+            window.location.href="{{ url_for('main.view_person', fullname='') }}" + fullname;
+        });
+    });
+</script>
+<script>
+    $(document).ready( function () {
+        var mygrid = $('#clintrials_authgrid').DataTable({
+            "processing": true,
+            "data": {{ alist['preclin']|tojson|safe }},
+            "columnDefs": [
+                { "targets": [4],
+                    "data": null,
+                    "defaultContent": '<a href=# class=action-view><span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span></a>'
+                }]
+        });
+        $('#clintrials_authgrid').on('click', '.action-view', function() {
+            var firstname = mygrid.row($(this).parents('tr').first()).data()[0];
+            var lastname = mygrid.row($(this).parents('tr').first()).data()[1];
+            var fullname = firstname + '|' + lastname;
+            window.location.href="{{ url_for('main.view_person', fullname='') }}" + fullname;
+        });
+    });
+</script>
+<script>
+    $(document).ready( function () {
+        var mygrid = $('#manu_authgrid').DataTable({
+            "processing": true,
+            "data": {{ alist['preclin']|tojson|safe }},
+            "columnDefs": [
+                { "targets": [4],
+                    "data": null,
+                    "defaultContent": '<a href=# class=action-view><span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span></a>'
+                }]
+        });
+        $('#manu_authgrid').on('click', '.action-view', function() {
+            var firstname = mygrid.row($(this).parents('tr').first()).data()[0];
+            var lastname = mygrid.row($(this).parents('tr').first()).data()[1];
+            var fullname = firstname + '|' + lastname;
+            window.location.href="{{ url_for('main.view_person', fullname='') }}" + fullname;
+        });
+    });
+</script>
+<script>
+    $(document).ready( function () {
+        var mygrid = $('#sale_authgrid').DataTable({
+            "processing": true,
+            "data": {{ alist['preclin']|tojson|safe }},
+            "columnDefs": [
+                { "targets": [4],
+                    "data": null,
+                    "defaultContent": '<a href=# class=action-view><span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span></a>'
+                }]
+        });
+        $('#sale_authgrid').on('click', '.action-view', function() {
+            var firstname = mygrid.row($(this).parents('tr').first()).data()[0];
+            var lastname = mygrid.row($(this).parents('tr').first()).data()[1];
+            var fullname = firstname + '|' + lastname;
+            window.location.href="{{ url_for('main.view_person', fullname='') }}" + fullname;
+        });
+    });
+</script>
 {% endblock %}
 
 {% block title %}Main{% endblock %}
@@ -89,8 +184,80 @@
         </div>
         <div class="panel-body">
             <div id='category_chart'><svg></svg></div>
-            </br>
-            <div id='keyword_chart'><svg></svg></div>
+            <br>
+            <h2><small>Research and Development</small></h2>
+            <table id="randd_authgrid" class="display">
+                <thead>
+                    <tr>
+                        <th>First name</th>
+                        <th>Last name</th>
+                        <th>Initials</th>
+                        <th>Affiliation</th>
+                        <th>More..</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <br>
+            <h2><small>Preclinical Research</small></h2>
+            <table id="preclin_authgrid" class="display">
+                <thead>
+                    <tr>
+                        <th>First name</th>
+                        <th>Last name</th>
+                        <th>Initials</th>
+                        <th>Affiliation</th>
+                        <th>More..</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <br>
+            <h2><small>Clinical Trials</small></h2>
+            <table id="clintrials_authgrid" class="display">
+                <thead>
+                    <tr>
+                        <th>First name</th>
+                        <th>Last name</th>
+                        <th>Initials</th>
+                        <th>Affiliation</th>
+                        <th>More..</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <br>
+            <h2><small>Manufacturing</small></h2>
+            <table id="manu_authgrid" class="display">
+                <thead>
+                    <tr>
+                        <th>First name</th>
+                        <th>Last name</th>
+                        <th>Initials</th>
+                        <th>Affiliation</th>
+                        <th>More..</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <h2><small>Marketing and Sale</small></h2>
+            <table id="sale_authgrid" class="display">
+                <thead>
+                    <tr>
+                        <th>First name</th>
+                        <th>Last name</th>
+                        <th>Initials</th>
+                        <th>Affiliation</th>
+                        <th>More..</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
