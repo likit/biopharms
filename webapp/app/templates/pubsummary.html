@@ -13,17 +13,17 @@
 {% block scripts %}
 {{ super() }}
 <!-- jQuery -->
-<script type="text/javascript" charset="utf8"
-    src="{{ url_for('static', filename='DataTables-1.10.10/media/js/jquery.js')}}"></script>
+{# <script type="text/javascript" charset="utf8" #}
+{#     src="{{ url_for('static', filename='DataTables-1.10.10/media/js/jquery.js')}}"></script> #}
 <!-- D3 -->
 <script type="text/javascript" charset="utf8"
-    src="{{ url_for('static', filename='d3.min.js')}}"></script>
+    src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.14/d3.min.js"></script>
 <!-- DataTables -->
 <script type="text/javascript" charset="utf8"
-    src="{{ url_for('static', filename='DataTables-1.10.10/media/js/jquery.dataTables.js') }}"></script>
+    src="https://cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
 <!-- nvd3 -->
 <script type="text/javascript" charset="utf8"
-    src="{{ url_for('static', filename='nvd3/build/nv.d3.min.js')}}"></script>
+    src="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.1/nv.d3.min.js"></script>
 
 <script>$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};</script>
 
