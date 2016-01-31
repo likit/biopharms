@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block title %}Main{% endblock %}
+{% block page_content %}
+<div class="page-header">
+    <div class="jumbotron">
+        <img src='{{ url_for('static', filename='img/thaist.jpg') }}' height=100>
+        <img src='{{ url_for('static', filename='img/cu.png') }}' height=100>
+        <img src='{{ url_for('static', filename='img/mahidol.jpg') }}' height=100>
+        <h2>Welcome to</h2>
+        <h1>Thai Biopharmaceutical<br>Research Database</h1>
+        <p>By Thailand Advanced Institute of Science and Technology,
+        Mahidol University and Chulalongkorn University</p>
+        <hr>
+        <h2>Introduction</h2>
+        <div class="well">
+        <p>
+        Biopharmaceuticals represent an interesting class of therapeutic medicinal agent produced from biological sources. Thusfar, very little information on the current status and state-of-the-art of the biopharmaceutical industry and research in Thailand is known. The value chain of the biopharmaceutical industry in Thailand is comprised of the following: research and development, pre-clinical studies, clinical trials and approval, manufacturing as well as marketing and sales.
+        </p><p>
+        In order for the government to boost biopharmaceutical industry in Thailand, it is critical to have a good understanding of the current state of each value chain in terms of human capital and resources to support the decision making of the policy makers.
+        </p>
+        </div>
+        <h2>Objective</h2>
+        <div class="well">
+        <p>
+        This project aims to make sense of the compiled data of researchers working in the field of biopharmaceutical by analyzing and identifying the key players in the field, analyzing their co-authorship collaboration network, identifying potential collaborators as well as reporting the key figures and numbers of the biopharmaceutical industry in Thailand.
+        </p>
+        </div>
+        <h2>Team Members</h2>
+        <div class="panel panel-default">
+            <div class="panel-heading"><h4>Mahidol University</h4></div>
+            <ul class="list-group">
+                <li class="list-group-item">Assoc. Prof. Dr.Chanin Nantasenamat, Center of Data Mining and Biomedical Informatics, the Faculty of Medical Technology</li>
+                <li class="list-group-item">Asst. Prof. Dr.Aungkura Supokawej, Department of Clinical Microscopy, the Faculty of Medical Technology</li>
+                <li class="list-group-item">Dr.Likit Preeyanon, Department of Community Medical Technology, the Faculty of Medical Technology</li>
+                <li class="list-group-item">Dr.Apilak Worachartcheewan, Department of Community Medical Technology, the Faculty of Medical Technology</li>
+                <li class="list-group-item">Dr.Napat Songtawee, Department of Community Medical Technology, the Faculty of Medical Technology</li>
+                <li class="list-group-item">Dr. Narisorn Kitiyanont, Institute of Molecular Biosciences</li>
+            </ul>
+            <div class="panel-heading"><h4>Chulalongkorn University</h4></div>
+            <ul class="list-group">
+                <li class="list-group-item">Dr.Ruttachuk Rungsiwiwat. Department of Obstetrics and Gynecology</li>
+            </ul>
+        </div>
+        <h2>Project Coordinators</h2>
+        <div class="panel panel-default">
+            <ul class="list-group">
+                <li class="list-group-item">Dr.Kommate Jitvanichphaibool, Thailand Advanced Institute of Science and Technology</li>
+                <li class="list-group-item">Dr.Porramate Chumyim, Thailand Advanced Institute of Science and Technology</li>
+                <li class="list-group-item">Mr.Bongse V. Muenyuddhi, Thailand Advanced Institute of Science and Technology</li>
+            </ul>
+        </div>
+        <h2>Funding</h2>
+        <div class="well">
+        <p>
+        The project has been fully supported by Thailand Advanced Institute of Science and Technology.
+        </p>
+        </div>
+        <h2>Database Administrator</h2>
+        <div class="well">
+            Contact <a href="mailto:likit.pre@mahidol.edu">likit.pre@mahidol.edu</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

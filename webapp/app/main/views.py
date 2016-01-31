@@ -603,3 +603,7 @@ def show_value_chain():
             category=ctg,
             alist=alist,
             )
+
+@main.route('/about/')
+def about():
+    return render_template('about.html')
