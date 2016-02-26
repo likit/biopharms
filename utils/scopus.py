@@ -96,7 +96,14 @@ for start in range(0,total_results+1, item_per_page):
         pub_data = {}
         pub_data['pii'] = article_dict['pii'][0] or ''
         pub_data['doi'] = article_dict['doi'][0] or ''
-        pub_data['ArticleDate'] = article_dict['coverDate'][0] or ''
+        pubdate = article_dict['coverDate'][0] or ''
+        if pubdate:
+            pubdate = pubdate.split('-')
+            print(pubdate)
+            pub_data['ArticleDate'] = datetime(int(pubdate[0]),
+                                        int(pubdate[1]), int(pubdate[2]))
+        else:
+            pub_data['ArticleDate'] = None
         pub_data['Keywords'] = ','.join(article_dict['subject'])
         pub_data['ArticleTitle'] = article_dict['title']
         pub_data['Abstract'] = article_dict['description']
@@ -125,7 +132,6 @@ for start in range(0,total_results+1, item_per_page):
                                     au['Initials']))
 
         add_scopus(pub_data, authors)
-        break
         if n >= max_articles:
             done = True
             break
