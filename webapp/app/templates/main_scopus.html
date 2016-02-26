@@ -74,9 +74,9 @@ src="{{ url_for('static', filename='DataTables-1.10.10/media/js/jquery.dataTable
                 Category  <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="{{ url_for('main.main_page', category="all") }}">All</a></li>
+                    <li><a href="{{ url_for('main.main_page_scopus', category="all") }}">All</a></li>
                 {% for ctg in  all_categories %}
-                    <li><a href="{{ url_for('main.main_page', category=ctg) }}">{{ ctg.title() }}</a></li>
+                    <li><a href="{{ url_for('main.main_page_scopus', category=ctg) }}">{{ ctg.title() }}</a></li>
                 {% endfor %}
                 </ul>
             </div>
