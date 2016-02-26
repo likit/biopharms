@@ -104,12 +104,9 @@ for start in range(0,total_results+1, item_per_page):
                                         int(pubdate[1]), int(pubdate[2]))
         else:
             pub_data['ArticleDate'] = None
-        if article_date['subject']:
-            pub_data['Keywords'] = ','.join(article_dict['subject'])
-        else:
-            pub_data['Keywords'] = ''
-        pub_data['ArticleTitle'] = article_dict['title']
-        pub_data['Abstract'] = article_dict['description']
+        pub_data['Keywords'] = ','.join(article_dict.get('subject', ''))
+        pub_data['ArticleTitle'] = article_dict['title'][0] or ''
+        pub_data['Abstract'] = article_dict['description'][0] or ''
         pub_data['BiopharmCategory'] = options.group
 
         authors = []
