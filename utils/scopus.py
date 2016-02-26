@@ -113,7 +113,10 @@ for start in range(0,total_results+1, item_per_page):
         for au in article_dict['creator']:
             lastname, forename = au.split(',')
             forename = forename.lstrip()
-            initials = forename[0].upper() + lastname[0].upper()
+            try:
+                initials = forename[0].upper() + lastname[0].upper()
+            except IndexError:
+                initials = ''
             authors.append(
                     {
                         'ForeName': forename,
