@@ -9,6 +9,7 @@ import pymongo
 import re
 from datetime import datetime
 from optparse import OptionParser
+from dataentry import add_scopus
 
 parser = OptionParser()
 parser.add_option('-y', '--year', dest='pub_year', help='Year', type='string')
@@ -21,7 +22,7 @@ parser.add_option('--affil', dest='affil', help='Affiliation', type='string')
 
 (options, args) = parser.parse_args()
 
-db = pymongo.Connection()['data']
+# db = pymongo.Connection()['data']
 
 api_key = os.environ['SCOPUS_APIKEY']
 
@@ -92,16 +93,47 @@ for start in range(0,total_results+1, item_per_page):
                         article_dict[tag].append(None)
 
         article_dict['group'] = options.group
+        pub_data = {}
+        pub_data['pii'] = article_dict['pii'][0] or ''
+        pub_data['doi'] = article_dict['doi'][0] or ''
+        pub_data['ArticleDate'] = article_dict['coverDate'][0] or ''
+        pub_data['Keywords'] = ','.join(article_dict['subject'])
+        pub_data['ArticleTitle'] = article_dict['title']
+        pub_data['Abstract'] = article_dict['description']
 
+        authors = []
+        for au in article_dict['creator']:
+            lastname, forename = au.split(',')
+            forename = forename.lstrip()
+            initials = forename[0].upper() + lastname[0].upper()
+            authors.append(
+                    {
+                        'ForeName': forename,
+                        'LastName': lastname,
+                        'Initials': initials,
+                        'Affiliation': ''
+                        }
+                    )
+
+        # if pub_data:
+        #     for key, value in pub_data.iteritems():
+        #         print('{} \n\t {}'.format(key, value))
+        for au in authors:
+            print('{} {} ({})'.format(au['ForeName'],
+                                    au['LastName'],
+                                    au['Initials']))
+
+        add_scopus(pub_data, authors)
+        break
         if n >= max_articles:
             done = True
             break
 
-        existing_article = db.scopus.find_one({'identifier': article_dict['identifier']})
-        if not existing_article:
-            db.scopus.insert(article_dict, safe=True)
-        else:
-            print >> sys.stderr, 'The article already exists.'
+        # existing_article = db.scopus.find_one({'identifier': article_dict['identifier']})
+        # if not existing_article:
+        #     db.scopus.insert(article_dict, safe=True)
+        # else:
+        #     print >> sys.stderr, 'The article already exists.'
     if done:
         print >> sys.stderr, 'Done.'
         break
