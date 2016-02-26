@@ -18,6 +18,44 @@ ALL_CATEGORIES = ['vaccine', 'stem cell',
 def index():
     return render_template('index.html')
 
+@main.route('/top_rank_scopus', methods=['GET', 'POST'])
+def top_rank_scopus():
+    labels = graph.cypher.execute("MATCH (n:SCOPUS) return labels(n);")
+    select_labels = set()
+    for lab in labels:
+        for l in lab[0]: select_labels.add(l)
+    category = request.args.get('category', 'all')  # category
+    return render_template('toprank_scopus.html',
+            alllabels=ALLLABELS, select_labels=list(select_labels),
+            all_categories=ALL_CATEGORIES,
+            category=category)
+
+@main.route('/_get_toprank_list_scopus')
+def get_toprank_list_scopus():
+    # category = 'all'
+    category = request.args.get('category', 'all')  # category
+    alist = []
+    if category == "all":
+        command = "start n=node(*) match (n:AUTHOR:SCOPUS)--(c:ARTICLE) return n, count(c) as connections order by connections desc limit 50;"
+    else:
+        command = 'start n=node(*) match (n:AUTHOR:SCOPUS)--(c:ARTICLE {BiopharmCategory:"%s"}) return n, count(c) as connections order by connections desc limit 50;' % (category)
+    results = graph.cypher.execute(command)
+
+    for r in results:
+        firstname = r.n.properties.get('ForeName', '')
+        lastname = r.n.properties.get('LastName', '')
+        initials = r.n.properties.get('Initials', '')
+        pub_count = r.connections
+        try:
+            affl = r.n.properties['Affiliation'][0]
+        except:
+            affl = 'Not Available'
+        if firstname.strip() and lastname.strip():
+            # alist.append([firstname, lastname, initials, affl, 0])
+            alist.append([firstname, lastname, initials, affl, 0, pub_count])
+
+    return jsonify(data=alist)
+
 
 @main.route('/top_rank', methods=['GET', 'POST'])
 def top_rank():
