@@ -1,5 +1,5 @@
 from flask.ext.wtf import Form
-from wtforms import (SubmitField, BooleanField, StringField)
+from wtforms import (SubmitField, BooleanField, StringField, HiddenField)
 from wtforms.validators import Optional
 # from wtforms import ValidationError, widgets
 
@@ -16,4 +16,5 @@ class valChainForm(Form):
             validators=[Optional()])
     firstname = StringField()
     lastname = StringField()
+    dname = HiddenField()
     submit = SubmitField('Submit')

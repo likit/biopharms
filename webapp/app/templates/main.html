@@ -27,7 +27,7 @@ src="{{ url_for('static', filename='DataTables-1.10.10/media/js/jquery.dataTable
                 "data": { 'category': {{ category|tojson|safe }} }
             },
             "columnDefs": [
-                { "targets": [4],
+                { "targets": [5],
                     "data": null,
                     "defaultContent": '<a href=# class=action-view><span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span></a>'
                 }]
@@ -88,6 +88,7 @@ src="{{ url_for('static', filename='DataTables-1.10.10/media/js/jquery.dataTable
                     <th>Last name</th>
                     <th>Initials</th>
                     <th>Affiliation</th>
+                    <th>Value Chain</th>
                     <th>More..</th>
                 </tr>
             </thead>

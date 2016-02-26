@@ -9,7 +9,7 @@ from flask import (Flask, render_template, session,
                     request, redirect, url_for, flash, jsonify)
 
 
-ALLLABELS = ['PUBMED']
+ALLLABELS = ['PUBMED', 'SCOPUS']
 ALL_CATEGORIES = ['vaccine', 'stem cell',
                     'therapeutic antibody',
                     'therapeutic peptide']
@@ -123,6 +123,18 @@ def main_page():
             all_categories=ALL_CATEGORIES,
             category=category)
 
+@main.route('/main_page_scopus', methods=['GET', 'POST'])
+def main_page_scopus():
+    labels = graph.cypher.execute("MATCH (n:SCOPUS) return labels(n);")
+    select_labels = set()
+    for lab in labels:
+        for l in lab[0]: select_labels.add(l)
+    category = request.args.get('category', 'all')  # category
+    return render_template('main_scopus.html',
+            alllabels=ALLLABELS, select_labels=list(select_labels),
+            all_categories=ALL_CATEGORIES,
+            category=category)
+
 
 @main.route('/affil', methods=['GET', 'POST'])
 def show_affil():
@@ -186,12 +198,41 @@ def get_people_list():
         firstname = p.n.properties.get('ForeName', '')
         lastname = p.n.properties.get('LastName', '')
         initials = p.n.properties.get('Initials', '')
+        valchain = p.n.properties.get('manualValueChain', [])
+        valchain = ','.join(valchain)
         try:
             affl = p.n.properties['Affiliation'][0]
         except:
             affl = 'Not Available'
         if firstname.strip() and lastname.strip():
-            alist.append([firstname, lastname, initials, affl, 0])
+            alist.append([firstname, lastname, initials, affl, valchain, 0])
+
+    return jsonify(data=alist)
+
+@main.route('/_get_people_list_scopus')
+def get_people_list_scopus():
+    # category = 'all'
+    print('Category', request.args.get('category'))
+    category = request.args.get('category', 'all')
+    if category == "all":
+        cypher_command = "MATCH (n:AUTHOR:SCOPUS) return distinct(n);"
+    else:
+        cypher_command = \
+                'MATCH (n:AUTHOR:SCOPUS)-[COAUTHOR]->(g:ARTICLE {BiopharmCategory: "%s"}) return distinct(n);' % category
+    people = graph.cypher.execute(cypher_command)
+    alist = []
+    for p in people:
+        firstname = p.n.properties.get('ForeName', '')
+        lastname = p.n.properties.get('LastName', '')
+        initials = p.n.properties.get('Initials', '')
+        valchain = p.n.properties.get('manualValueChain', [])
+        valchain = ','.join(valchain)
+        try:
+            affl = p.n.properties['Affiliation'][0]
+        except:
+            affl = 'Not Available'
+        if firstname.strip() and lastname.strip():
+            alist.append([firstname, lastname, initials, affl, valchain, 0])
 
     return jsonify(data=alist)
 
@@ -217,6 +258,7 @@ def get_coauthor_list():
 
 @main.route('/view_keyword')
 def view_keyword():
+    #TODO: add dname
     keyword = request.args.get('keyword')
     cypher_command = \
         "MATCH (n:KEYWORD {word:\"%s\"})-[]-(ARTICLE)-[]-(a:AUTHOR) return n, a;" \
@@ -285,9 +327,14 @@ def view_keyword():
 def value_chain():
     form = valChainForm(request.form)
     if form.validate_on_submit():
-        cypher_command = \
-                "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'}) return n;" \
-                % (form.firstname.data, form.lastname.data)
+        if form.dname.data == 'scopus':
+            cypher_command = \
+                    "MATCH (n:AUTHOR:SCOPUS {ForeName:'%s', LastName:'%s'}) return n;" \
+                    % (form.firstname.data, form.lastname.data)
+        else:
+            cypher_command = \
+                    "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'}) return n;" \
+                    % (form.firstname.data, form.lastname.data)
         authors = graph.cypher.execute(cypher_command)
         flash('Data added successfully.')
         for author in authors:
@@ -309,18 +356,24 @@ def value_chain():
             author.n.properties['manualValueChain'] = manualValueChain
             print(author.n.properties.get('manualValueChain', None))
             author.n.push()
-        return redirect(url_for('main.view_person', fullname=(
-            '%s|%s' % (form.firstname.data, form.lastname.data)
-            )))
+        return redirect(url_for('main.view_person', dname=form.dname.data,
+            fullname=('%s|%s' % (form.firstname.data, form.lastname.data))))
 
 
 @main.route('/view_person', methods=['GET'])
 def view_person():
     fullname = request.args.get('fullname')
+    dname = request.args.get('dname')
+    print(fullname, dname)
     firstname, lastname = fullname.split('|')
-    cypher_command = \
-            "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'}) return n;" \
-            % (firstname, lastname)
+    if dname == 'scopus':
+        cypher_command = \
+                "MATCH (n:AUTHOR:SCOPUS {ForeName:'%s', LastName:'%s'}) return n;" \
+                % (firstname, lastname)
+    else:
+        cypher_command = \
+                "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'}) return n;" \
+                % (firstname, lastname)
     author = graph.cypher.execute(cypher_command)
 
     # cypher_command = \
@@ -344,13 +397,19 @@ def view_person():
     # for a in all_affils:
     #     print(a)
 
-    cypher_command = \
+    if dname == 'scopus':
+        cypher_command = \
+            "MATCH (n:AUTHOR:SCOPUS {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(f:ARTICLE) return f;" \
+            % (firstname, lastname)
+    else:
+        cypher_command = \
             "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(f:ARTICLE) return f;" \
             % (firstname, lastname)
     pubs = graph.cypher.execute(cypher_command)
     kw=set()
     biopharmcat = set()
     pubyears = {}
+    #TODO: replace a hardcoded range
     for y in range(2005,2016):
         pubyears[y] = 0
 
@@ -396,8 +455,13 @@ def view_person():
     for v in author.one.properties.get('manualValueChain', set()):
         valuechain.add(valuechain_keys[v])
 
-    cypher_command = \
-            "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(c)<-[g:COAUTHOR]-(f:AUTHOR) return f;" % (firstname, lastname)
+    if dname == 'scopus':
+        cypher_command = \
+                "MATCH (n:AUTHOR:SCOPUS {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(c)<-[g:COAUTHOR]-(f:AUTHOR) return f;" % (firstname, lastname)
+    else:
+        cypher_command = \
+                "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(c)<-[g:COAUTHOR]-(f:AUTHOR) return f;" % (firstname, lastname)
+
     coauthors = graph.cypher.execute(cypher_command)
     coauthor_nodes = []
     coauthor_edges = []
@@ -436,8 +500,8 @@ def view_person():
             'favShape': 'ellipse',
             'favColor': '#0066ff',
             'href': urllib.unquote("%s" %
-                        url_for('main.view_person', fullname='%s|%s' %
-                        (p.firstname, p.lastname)))
+                        url_for('main.view_person', dname=dname,
+                            fullname='%s|%s' % (p.firstname, p.lastname)))
                 }
             }
         edge = {'data': {
@@ -469,6 +533,7 @@ def view_person():
             coauthor_graph=coauthor_graph,
             form=valchain_form,
             valuechain=valuechain,
+            dname=dname
            )
 
 

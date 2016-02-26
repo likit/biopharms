@@ -89,12 +89,12 @@ def add_scopus(pub_data, authors):
 
     # Create authors
     print('\tSearching/creating author nodes..')
-    labels = ['AUTHOR']
+    labels = ['AUTHOR', 'SCOPUS']
     for author in authors:
         print('\t\tSearching for %s, %s' % \
                 (author['ForeName'], author['LastName']))
         cypher_command = \
-            'MATCH (n:AUTHOR {LastName: "%s", ForeName: "%s"}) return n;' \
+                'MATCH (n:AUTHOR:SCOPUS {LastName: "%s", ForeName: "%s"}) return n;' \
             % (author['LastName'], author['ForeName'])
         found_authors = graph.cypher.execute(cypher_command)
         firstnames = set()
