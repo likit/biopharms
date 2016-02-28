@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block styles %}
+{{ super() }}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{% endblock %}
+
+{% block title %}Edit Pubmed Data{% endblock %}
+{% block page_content %}
+<div>
+    <h2>Edit Researcher Profile</h2>
+    <form action={{ url_for('main.edit_profile') }} method="post">
+        <div class="form-inline">
+            <div class="form-group">
+                {{ form.forename.label(for='forename') }} {{ form.forename(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.lastname.label(for='lastname') }} {{ form.lastname(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.initials.label(for='initials') }} {{ form.initials(class="form-control") }}
+            </div>
+        </div>
+        <div class="form-group">
+            {{ form.affil.label(for='affil') }} {{ form.affil(class="form-control") }}
+        </div>
+        {{ form.dname(value=dname) }}
+        {{ form.submit(value="Submit", class="btn btn-default") }}
+    </form>
+</div>
+{% endblock %}

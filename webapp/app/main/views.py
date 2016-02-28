@@ -3,7 +3,7 @@ from datetime import datetime
 from . import main
 from .. import graph
 from collections import defaultdict, namedtuple
-from forms import valChainForm
+from forms import valChainForm, AuthorProfile
 
 from flask import (Flask, render_template, session,
                     request, redirect, url_for, flash, jsonify)
@@ -14,9 +14,41 @@ ALL_CATEGORIES = ['vaccine', 'stem cell',
                     'therapeutic antibody',
                     'therapeutic peptide']
 
+@main.route('/edit_profile', methods=['GET', 'POST'])
+def edit_profile():
+    form = AuthorProfile()
+    if request.method == 'GET':
+        forename, lastname = request.args.get('name', '|').split('|')  # category
+        dname = request.args.get('dname', 'pubmed')
+        if forename and lastname:
+            if dname == 'scopus':
+                cypher_command = \
+                        "MATCH (n:AUTHOR:SCOPUS {ForeName:'%s', LastName:'%s'}) return n;" \
+                        % (forename, lastname)
+            else:
+                cypher_command = \
+                        "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'}) return n;" \
+                        % (forename, lastname)
+            author = graph.cypher.execute(cypher_command)
+            form.forename.data = author.one.properties['ForeName']
+            form.lastname.data = author.one.properties['LastName']
+            form.dname.data = dname
+            form.initials.data = author.one.properties['Initials']
+            form.affil.data = ';'.join(author.one.properties['Affiliation']) or 'No data'
+        return render_template('edit_profile.html', form=form, dname=dname)
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            flash('Data updated successfully.')
+            print(form.forename.data, form.affil.data)
+        else:
+            print('Form not validated.')
+        return redirect(url_for('main.main_page'))
+
+
 @main.route('/', methods=['GET', 'POST'])
 def index():
     return render_template('index.html')
+
 
 @main.route('/top_rank_scopus', methods=['GET', 'POST'])
 def top_rank_scopus():
