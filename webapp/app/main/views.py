@@ -3,7 +3,7 @@ from datetime import datetime
 from . import main
 from .. import graph
 from collections import defaultdict, namedtuple
-from forms import valChainForm, AuthorProfile
+from forms import valChainForm, AuthorProfile, Pub
 
 from flask import (Flask, render_template, session,
                     request, redirect, url_for, flash, jsonify)
@@ -13,6 +13,106 @@ ALLLABELS = ['PUBMED', 'SCOPUS']
 ALL_CATEGORIES = ['vaccine', 'stem cell',
                     'therapeutic antibody',
                     'therapeutic peptide']
+
+def create_keyword_nodes(pub):
+    labels = ['KEYWORD']
+    kw_nodes = []
+    if pub.properties['Keywords']:
+        for kw in pub.properties['Keywords'].split(','):
+            node = Node.cast(labels, {'word': kw})
+            kw_nodes.append(node)
+
+        for i in range(len(kw_nodes)-1):
+            path = Path(kw_nodes[i], 'RELATE', kw_nodes[i+1])
+            graph.create(path)
+        r = Relationship(pub, 'HAS', kw_nodes[0])
+        graph.create(r)
+    else:
+        return
+
+def add_scopus(pub_data, authors):
+    # Create publication
+    labels = ['ARTICLE', 'MANUAL']
+    print("\tCreating publication node")
+    try:
+        node = Node.cast(labels, pub_data)
+    except TypeError:
+        raise SystemExit
+    else:
+        pub_node, = graph.create(node)
+
+    # add keyword graph
+    create_keyword_nodes(pub_node)
+    article_date = pub_data['ArticleDate']
+
+    # Create authors
+    print('\tSearching/creating author nodes..')
+    labels = ['AUTHOR', 'MANUAL']
+    for author in authors:
+        print('\t\tSearching for %s, %s' % \
+                (author['ForeName'], author['LastName']))
+        cypher_command = \
+                'MATCH (n:AUTHOR:MANUAL {LastName: "%s", ForeName: "%s"}) return n;' \
+            % (author['LastName'], author['ForeName'])
+        found_authors = graph.cypher.execute(cypher_command)
+        firstnames = set()
+        for auth in found_authors:
+            firstnames.add(auth.n.properties['ForeName'].lower())
+
+        if author['ForeName'].lower() not in firstnames:
+            print('\t\tNot found.')
+            node = Node.cast(labels, author)
+            auth, = graph.create(node)
+            r = Relationship(auth, 'COAUTHOR', pub_node, ambiguous=False)
+            coauthor_path = graph.create(r)
+            # add_affil(auth, graph, article_date)
+        else:
+            print('\t\tFound %d persons.' % len(found_authors))
+            for auth in found_authors:
+                r = Relationship(auth.n, 'COAUTHOR', pub_node, ambiguous=True)
+                auth.n.properties['Affiliation'] = []
+                coauthor_path = graph.create(r)
+
+
+@main.route('/add_data', methods=['GET', 'POST'])
+def add_data():
+    form = Pub()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            authors = []
+            for au in form.coauthor.data.split(';'):
+                lastname, forename = au.split(',')
+                forename = forename.lstrip()
+                lastname = lastname.lstrip()
+                try:
+                    initials = forename[0].upper() + lastname[0].upper()
+                except IndexError:
+                    initials = ''
+                authors.append(
+                        {
+                            'ForeName': forename,
+                            'LastName': lastname,
+                            'Initials': initials,
+                            'Affiliation': ''
+                            }
+                        )
+            print(authors)
+            pubdata = {}
+            pub_data['pii'] = form.pii.data
+            pub_data['doi'] = form.doi.data
+            pubdate = form.pubdate.data
+            if pubdate:
+                pubdate = pubdate.split('-')
+                print(pubdate)
+                pub_data['ArticleDate'] = datetime(int(pubdate[0]),
+                                            int(pubdate[1]), int(pubdate[2]))
+
+            pub_data['Keywords'] = ','.join(article_dict.get('subject', ''))
+            pub_data['ArticleTitle'] = article_dict['title'][0] or ''
+            pub_data['Abstract'] = article_dict['description'][0] or ''
+            pub_data['BiopharmCategory'] = options.group
+    else:
+        return render_template('add_data.html', form=form)
 
 @main.route('/edit_pub', methods=['GET'])
 def edit_pub():

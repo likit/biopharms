@@ -1,6 +1,7 @@
 from flask.ext.wtf import Form
 from wtforms import (SubmitField, BooleanField,
-                        StringField, HiddenField, TextAreaField)
+                        StringField, HiddenField, TextAreaField,
+                        SelectField)
 from wtforms.validators import Optional
 # from wtforms import ValidationError, widgets
 
@@ -26,5 +27,24 @@ class AuthorProfile(Form):
     initials = StringField('Initials')
     identifiers = StringField('Indentifiers')
     affil = TextAreaField('Affiliation')
+    dname = HiddenField()
+    submit = SubmitField('Submit')
+
+class Pub(Form):
+    title = TextAreaField('Article title')
+    abstract = TextAreaField('Abstract')
+    category = SelectField('Category', choices=[
+            ("stem cell", "Stem Cell"),
+            ("vaccine", "Vaccine"),
+            ("therapeutic peptide", "Therapeutic peptide"),
+            ("therapeutic protein", "Therapeutic protein"),
+        ])
+    pubdate = StringField('Publication date')
+    coauthor = TextAreaField('Coauthors')
+    author_firstname = StringField('Author firstname')
+    author_lastname = StringField('Author lastname')
+    pii = StringField('pii')
+    doi = StringField('doi')
+    keywords = StringField('Keywords')
     dname = HiddenField()
     submit = SubmitField('Submit')
