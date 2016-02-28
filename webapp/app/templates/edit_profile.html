@@ -14,19 +14,21 @@
 <div>
     <h2>Edit Researcher Profile</h2>
     <form action={{ url_for('main.edit_profile') }} method="post">
+        {{ form.hidden_tag() }}
         <div class="form-inline">
             <div class="form-group">
-                {{ form.forename.label(for='forename') }} {{ form.forename(class="form-control") }}
+                {{ form.forename.label(for='forename') }} {{ form.forename(class="form-control", readonly=True) }}
             </div>
             <div class="form-group">
-                {{ form.lastname.label(for='lastname') }} {{ form.lastname(class="form-control") }}
+                {{ form.lastname.label(for='lastname') }} {{ form.lastname(class="form-control", readonly=True) }}
             </div>
             <div class="form-group">
                 {{ form.initials.label(for='initials') }} {{ form.initials(class="form-control") }}
             </div>
         </div>
         <div class="form-group">
-            {{ form.affil.label(for='affil') }} {{ form.affil(class="form-control") }}
+            {{ form.affil.label(for='affil') }} {{ form.affil(placeholder="No data", class="form-control") }}
+            <p>Please use a semicolon to separate affilations.</p>
         </div>
         {{ form.dname(value=dname) }}
         {{ form.submit(value="Submit", class="btn btn-default") }}

@@ -34,15 +34,34 @@ def edit_profile():
             form.lastname.data = author.one.properties['LastName']
             form.dname.data = dname
             form.initials.data = author.one.properties['Initials']
-            form.affil.data = ';'.join(author.one.properties['Affiliation']) or 'No data'
+            form.affil.data = ';'.join(author.one.properties['Affiliation']) or ''
         return render_template('edit_profile.html', form=form, dname=dname)
     if request.method == 'POST':
         if form.validate_on_submit():
+            forename = form.forename.data
+            lastname = form.lastname.data
+            dname = form.dname.data
+            if forename and lastname:
+                if dname == 'scopus':
+                    cypher_command = \
+                            "MATCH (n:AUTHOR:SCOPUS {ForeName:'%s', LastName:'%s'}) return n;" \
+                            % (forename, lastname)
+                else:
+                    cypher_command = \
+                            "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'}) return n;" \
+                            % (forename, lastname)
+                author = graph.cypher.execute(cypher_command)
+                author.one.properties['ForeName'] = forename
+                author.one.properties['LastName'] = lastname
+                author.one.properties['Affiliation'] = form.affil.data.split(';')
+                author.one.push()
             flash('Data updated successfully.')
-            print(form.forename.data, form.affil.data)
         else:
-            print('Form not validated.')
-        return redirect(url_for('main.main_page'))
+            flash('Error occurs. Failed to update data.')
+        if dname == 'scopus':
+            return redirect(url_for('main.main_page_scopus'))
+        else:
+            return redirect(url_for('main.main_page'))
 
 
 @main.route('/', methods=['GET', 'POST'])
