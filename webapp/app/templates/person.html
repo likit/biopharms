@@ -71,6 +71,15 @@
         var mygrid = $('#pubgrid').DataTable({
             "processing": true,
             "ajax": $SCRIPT_ROOT + "/_get_pub_list?fullname="+{{ fullname|tojson|safe }},
+            "columnDefs": [
+                { "targets": [6],
+                    "data": null,
+                    "defaultContent": '<a href=# class=action-view><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span></a>'
+                }]
+        });
+        $('#pubgrid').on('click', '.action-view', function() {
+            var pubid = mygrid.row($(this).parents('tr').first()).data()[5];
+            window.location.href="{{ url_for('main.edit_pub', pubid='') }}" + pubid;
         });
     });
 </script>
@@ -280,6 +289,8 @@ nv.addGraph(function() {
                         <th>PubDate</th>
                         <th>Keywords</th>
                         <th>Group</th>
+                        <th>ID</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>

@@ -14,6 +14,18 @@ ALL_CATEGORIES = ['vaccine', 'stem cell',
                     'therapeutic antibody',
                     'therapeutic peptide']
 
+@main.route('/edit_pub', methods=['GET'])
+def edit_pub():
+    pubid = request.args.get('pubid', '')
+    cypher_command = "MATCH (c:ARTICLE) WHERE id(c)=%s DETACH DELETE c" % pubid
+    try:
+        _ = graph.cypher.execute(cypher_command)
+    except:
+        flash('Failed to remove the article.')
+    else:
+        flash('The article has been removed.')
+    return redirect(request.referrer)
+
 @main.route('/edit_profile', methods=['GET', 'POST'])
 def edit_profile():
     form = AuthorProfile()
@@ -630,17 +642,20 @@ def view_person():
 def get_pub_list():
     firstname, lastname = request.args.get('fullname').split('|')
     cypher_command = \
-            "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(c) return c;" \
+            "MATCH (n:AUTHOR {ForeName:'%s', LastName:'%s'})-[r:COAUTHOR]->(c) return {pid: ID(c)} as pubid;" \
             % (firstname, lastname)
-    people = graph.cypher.execute(cypher_command)
+    pubs = graph.cypher.execute(cypher_command)
     alist = []
-    for p in people:
-        title = p.c.properties['ArticleTitle']
-        abstract = p.c.properties['Abstract']
-        pubdate = p.c.properties['ArticleDate']
-        category = p.c.properties['BiopharmCategory']
-        keywords = p.c.properties['Keywords']
-        alist.append([title, abstract, pubdate, keywords, category])
+    for p in pubs:
+        cypher_command = "MATCH (c:ARTICLE) WHERE id(c)=%d RETURN c;" % p['pubid']['pid']
+        pub = graph.cypher.execute(cypher_command)
+        title = pub.one.properties['ArticleTitle']
+        abstract = pub.one.properties['Abstract']
+        pubdate = pub.one.properties['ArticleDate']
+        category = pub.one.properties['BiopharmCategory']
+        keywords = pub.one.properties['Keywords']
+        alist.append([title, abstract, pubdate,
+                        keywords, category, p['pubid']['pid'], 0])
 
     return jsonify(data=alist)
 
