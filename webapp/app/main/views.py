@@ -827,13 +827,14 @@ def pub_summary():
 
 @main.route('/show_value_chain/', methods=['GET'])
 def show_value_chain():
+    dname = request.args.get('dname', '')
     ctg = request.args.get('category', 'all')  # category
     if ctg == 'all':
         cypher_command = \
-            'MATCH (n:ARTICLE)-[:COAUTHOR]-(a:AUTHOR) where has(n.BiopharmCategory) return distinct(a);'
+            'MATCH (n:ARTICLE:%s)-[:COAUTHOR]-(a:AUTHOR) where has(n.BiopharmCategory) return distinct(a);' % dname.upper()
     else:
         cypher_command = \
-            'MATCH (n:ARTICLE)-[:COAUTHOR]-(a:AUTHOR) where has(n.BiopharmCategory) and n.BiopharmCategory="%s" return distinct(a);' % ctg
+            'MATCH (n:ARTICLE:%s)-[:COAUTHOR]-(a:AUTHOR) where has(n.BiopharmCategory) and n.BiopharmCategory="%s" return distinct(a);' % (dname.upper(), ctg)
 
     authors = graph.cypher.execute(cypher_command)
     value_chain = defaultdict(int)
@@ -871,6 +872,7 @@ def show_value_chain():
             value_chain_data=value_chain_data,
             category=ctg,
             alist=alist,
+            dname=dname,
             )
 
 @main.route('/about/')

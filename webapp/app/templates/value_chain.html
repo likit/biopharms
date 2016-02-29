@@ -175,9 +175,9 @@
                 Category  <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="{{ url_for('main.show_value_chain', category="all") }}">All</a></li>
+                    <li><a href="{{ url_for('main.show_value_chain', dname=dname, category="all") }}">All</a></li>
                 {% for ctg in  all_categories %}
-                    <li><a href="{{ url_for('main.show_value_chain', category=ctg) }}">{{ ctg.title() }}</a></li>
+                    <li><a href="{{ url_for('main.show_value_chain', dname=dname, category=ctg) }}">{{ ctg.title() }}</a></li>
                 {% endfor %}
                 </ul>
             </div>
