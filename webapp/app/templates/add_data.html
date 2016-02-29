@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block styles %}
+{{ super() }}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{% endblock %}
+
+{% block title %}Add Data{% endblock %}
+{% block page_content %}
+<div>
+    <h2>Add New Publication</h2>
+    <form action={{ url_for('main.add_data') }} method="post">
+        {{ form.hidden_tag() }}
+        <div class="form-inline">
+            <div class="form-group">
+                {{ form.category.label(for='category') }} {{ form.category(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.pubdate.label(for='pubdate') }} {{ form.pubdate(class="form-control", placeholder="2016-02-04") }}
+            </div>
+        </div>
+        <div class="form-inline">
+            <div class="form-group">
+                {{ form.author_firstname.label(for='author_firstname') }} {{ form.author_firstname(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.author_lastname.label(for='author_lastname') }} {{ form.author_lastname(class="form-control") }}
+            </div>
+        </div>
+        <div class="form-inline">
+            <div class="form-group">
+                {{ form.keywords.label(for='keywords') }} {{ form.keywords(class="form-control") }}
+            <p>Please use a comma to separate coauthors</p>
+            </div>
+        </div>
+
+        <div class="form-group">
+            {{ form.title.label(for='title') }} {{ form.title(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.abstract.label(for='abstract') }} {{ form.abstract(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.coauthor.label(for='coauthor') }} {{ form.coauthor(placeholder="Lastname, Firstname e.g. Smith, Adam; Nash, John", class="form-control") }}
+            <p>Please use a comma to separate coauthors</p>
+        </div>
+        <div class="form-inline">
+            <div class="form-group">
+                {{ form.doi.label(for='doi') }} {{ form.doi(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.pii.label(for='pii') }} {{ form.pii(class="form-control") }}
+            </div>
+        </div>
+        {{ form.dname(value="MANUAL") }}
+        {{ form.submit(value="Submit", class="btn btn-default") }}
+    </form>
+</div>
+{% endblock %}
